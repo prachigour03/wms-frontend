@@ -8,7 +8,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import {
   getUtilitySettings,
   upsertMultipleUtilitySettings,
-} from "../../api/UtilitySettings.api";
+} from "../../api/UtilitySettings.api.js";
 
 export default function UtilitySettings() {
   const [settings, setSettings] = useState({

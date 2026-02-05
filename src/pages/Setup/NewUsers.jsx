@@ -40,9 +40,9 @@ import {
   createUser,
   updateUser,
   deleteUser,
-} from "../../api/NewUsers.api";
-import { getAllRolesApi } from "../../api/roles.api";
-import { getAllPermissionsApi } from "../../api/permissions.api";
+} from "../../api/NewUsers.api.js";
+import { getAllRolesApi } from "../../api/roles.api.js";
+import { getAllPermissionsApi } from "../../api/permissions.api.js";
 import PermissionGuard from "../../auth/PermissionGuard";
 
 /* ===================== VALIDATION ===================== */

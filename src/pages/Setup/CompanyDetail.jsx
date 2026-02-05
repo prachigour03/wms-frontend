@@ -9,7 +9,7 @@ import {
   getCompanyDetails,
   updateCompanyDetail,
   createCompanyDetail,
-} from "../../api/CompanyDetail.api";
+} from "../../api/CompanyDetail.api.js";
 import { useDispatch } from 'react-redux';
 import { createNotification } from '../../features/notificationSlice';
 

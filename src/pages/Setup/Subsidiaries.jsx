@@ -30,7 +30,7 @@ import {
   getSubsidiaries,
   updateSubsidiary,
   deleteSubsidiary,
-} from "../../api/Subsidiaries.api";
+} from "../../api/Subsidiaries.api.js";
 import { useDispatch } from 'react-redux';
 import { createNotification } from '../../features/notificationSlice';
 

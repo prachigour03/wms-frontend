@@ -11,8 +11,8 @@ import {
   createRoleApi,
   updateRoleApi,
   deleteRoleApi,
-} from "../../api/roles.api";
-import { getAllPermissionsApi } from "../../api/permissions.api";
+} from "../../api/roles.api.js";
+import { getAllPermissionsApi } from "../../api/permissions.api.js";
 
 const RoleSchema = Yup.object({
   name: Yup.string().required("Role name is required"),

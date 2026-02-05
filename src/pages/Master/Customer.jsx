@@ -32,7 +32,7 @@ import {
   updateCustomer, 
   deleteCustomer,
 } 
-from "../../api/Customer.api";
+from "../../api/Customer.api.js";
 
 
 export default function Customer() {

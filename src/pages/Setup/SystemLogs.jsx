@@ -20,8 +20,8 @@ import {
   Chip,
 } from "@mui/material";
 
-import { getSystemLogs } from "../../api/SystemLogs.api";
-import { getAllUsersApi } from "../../api/users.api";
+import { getSystemLogs } from "../../api/SystemLogs.api.js";
+import { getAllUsersApi } from "../../api/users.api.js";
 
 export default function SystemLogs() {
   const [logs, setLogs] = useState([]);

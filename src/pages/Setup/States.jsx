@@ -27,7 +27,7 @@ import {
   createState,
   updateState,
   deleteState,
-} from "../../api/States.api";
+} from "../../api/States.api.js";
 import { useDispatch } from 'react-redux';
 import { createNotification } from '../../features/notificationSlice';
 

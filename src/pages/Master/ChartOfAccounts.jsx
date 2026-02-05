@@ -29,7 +29,7 @@ import {
   getChartOfAccounts,
   updateChartOfAccount,
   deleteChartOfAccount,
-} from "../../api/ChartOfAccount.api";
+} from "../../api/ChartOfAccount.api.js";
 import { useDispatch } from 'react-redux';
 import { createNotification } from '../../features/notificationSlice';
 

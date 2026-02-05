@@ -31,7 +31,7 @@ import {
   updateAccountType, 
   deleteAccountType,
 } 
-from "../../api/AccountType.api";
+from "../../api/AccountType.api.js";
 
 
 export default function AccountTypes() {

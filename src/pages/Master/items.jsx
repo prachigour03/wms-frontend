@@ -31,8 +31,8 @@ import {
   getItems,
   updateItem,
   deleteItem,
-} from "../../api/Item.api";
-import { getItemGroups } from "../../api/itemGroup.api";
+} from "../../api/Item.api.js";
+import { getItemGroups } from "../../api/itemGroup.api.js";
 
 import { useDispatch } from "react-redux";
 import { createNotification } from "../../features/notificationSlice";

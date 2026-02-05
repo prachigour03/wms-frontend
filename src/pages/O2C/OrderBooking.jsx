@@ -34,10 +34,10 @@ import {
   createOrder,
   updateOrder,
   deleteOrder,
-} from "../../api/orderBooking.api";
+} from "../../api/orderBooking.api.js";
 
-import { getItems } from "../../api/Item.api";
-import { getLocations } from "../../api/Locations.api";
+import { getItems } from "../../api/Item.api.js";
+import { getLocations } from "../../api/Locations.api.js";
 
 export default function OrderBooking() {
   const dispatch = useDispatch();

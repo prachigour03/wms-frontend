@@ -28,7 +28,8 @@ import {
   createPaymentTeam,
   updatePaymentTeam,
   deletePaymentTeam,
-} from "../../api/PaymentTeam.api";
+} from "../../api/PaymentTeam.api.js";
+
 export default function PaymentTeam() {
   const [data, setData] = useState([]);
   const [open, setOpen] = useState(false);
