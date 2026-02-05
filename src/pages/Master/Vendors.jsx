@@ -37,7 +37,7 @@ import {
   getVendors,
   updateVendor,
   deleteVendor,  
- } from "../../api/Vendor.api";
+ } from "../../api/vendor.api";
 
 const DEFAULT_FORM = {
   vendorCode: "",
