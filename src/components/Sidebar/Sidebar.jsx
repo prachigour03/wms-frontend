@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useMediaQuery } from '@mui/material';
-
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useMediaQuery } from "@mui/material";
+import companyLogo from "../../assets/logo1.png";
 import {
   Drawer,
   List,
@@ -14,137 +14,27 @@ import {
   Divider,
   Tooltip,
   Collapse,
+} from "@mui/material";
 
-} from '@mui/material';
+import { Close, KeyboardArrowUp, KeyboardArrowDown } from "@mui/icons-material";
+import PushPin from "@mui/icons-material/PushPin";
+import PushPinOutlined from "@mui/icons-material/PushPinOutlined";
 
-import {
-  Dashboard,
-  Settings,
-  Close,
-  KeyboardArrowUp,
-  KeyboardArrowDown,
-  PersonAdd,
-  LocationCity,
-  LocationOn,
-  AttachMoney,
-  Public,
-  AccountTree,
-  Payment,
-  Apartment,
-  History,
-  Inventory2,
-  Assessment,
-  ShoppingCart,
-  KeyboardReturn,
-  ReceiptLong,
-  LocalShipping,
-  AccountBalance,
-  Build,
-  Category,
-  GroupWork,
-  Code,
-  ListAlt,
-  Article,
-  HomeWork,
-  Work,
-  People,
-  Straighten,
-} from '@mui/icons-material';
-
-import BusinessSharp from '@mui/icons-material/BusinessSharp';
-import ShoppingCartSharp from '@mui/icons-material/ShoppingCartSharp';
-import SellSharp from '@mui/icons-material/SellSharp';
-import ReceiptLongSharp from '@mui/icons-material/ReceiptLongSharp';
-import PushPin from '@mui/icons-material/PushPin';
-import PushPinOutlined from '@mui/icons-material/PushPinOutlined';
+import { SIDEBAR_CONFIG } from "../../config/sidebarConfig";
+import { useAuth } from "../../auth/AuthContext";
 
 const COLLAPSED_WIDTH = 72;
 const EXPANDED_WIDTH = 260;
 
-/* ===== MENU CONFIG ===== */
-const navItems = [
-  { text: 'Dashboard', icon: Dashboard, path: '/' },
-
-  {
-    text: 'Setup',
-    icon: Settings,
-    children: [
-      { text: 'Company Details', path: '/setup/companyDetail', icon: Inventory2 },
-      { text: 'Currencies', path: '/setup/Currencies', icon: AttachMoney },
-      { text: 'States', path: '/setup/States', icon: Public },
-      { text: 'Departments', path: '/setup/Departments', icon: AccountTree },
-      { text: 'Locations', path: '/setup/Locations', icon: LocationOn },
-      { text: 'New Users', path: '/setup/NewUsers', icon: PersonAdd },
-      { text: 'Payment Team', path: '/setup/PaymentTeam', icon: Payment },
-      { text: 'Cities', path: '/setup/Cities', icon: LocationCity },
-      { text: 'Subsidiaries', path: '/setup/Subsidiaries', icon: Apartment },
-      { text: 'System Logs', path: '/setup/SystemLogs', icon: History },
-      { text: 'Utility Settings', path: '/setup/UtilitySettings', icon: Settings },
-    ],
-  },
-
-  {
-    text: 'Master',
-    icon: BusinessSharp,
-    children: [
-       { text: 'Account Types', path: '/master/AccountTypes', icon: AccountBalance },
-      { text: 'Chart of Accounts', path: '/master/ChartOfAccounts', icon: AccountTree},
-      { text: 'Customer', path: '/master/Customer', icon: PersonAdd },
-      { text: 'Employees', path: '/Employees/EmployeeDetails', icon: PersonAdd },
-      { text: 'Item Rate Master', path: '/master/ItemRateMaster', icon: Inventory2 },
-      { text: 'Items', path: '/master/items', icon: Inventory2 },
-      { text: 'Material Status', path: '/master/MaterialStatus', icon: Build },
-      { text: 'MSI Type', path: '/master/MSItypes', icon: Category},
-      { text: 'Item Group', path: '/master/ItemsGroups', icon: GroupWork },
-      { text: 'HSN/SAC Codes', path: '/master/SACcodes', icon: Code },
-      { text: 'Service Categories', path: '/master/ServiceCategories',icon: Category },
-      { text: 'Service Rate Master', path: '/master/ServicesRateMaster',icon: ListAlt},
-      { text: 'Service Types', path: '/master/ServicesTypes',icon: Article },
-      { text: 'Sites', path: '/master/Sites', icon: HomeWork },
-      { text: 'Stores', path: '/master/Stores',icon: Straighten },
-      { text: 'Transportation Modes', path: '/master/TransportationModes', icon: LocalShipping },
-      { text: 'UOM', path: '/master/Uom', icon: Straighten },
-      { text: 'Vendors', path: '/master/Vendors', icon: People },
-      { text: 'Warehouses', path: '/master/Warehouses',icon: HomeWork },
-      { text: 'Work Categories', path: '/master/WorkCategories',icon: Work },
-    ],
-  },
-
-  {
-    text: 'Transition',
-    icon: ReceiptLongSharp,
-    children: [
-      { text: 'Inventory Count', path: '/transition/InventoryCount', icon: Inventory2 },
-      { text: 'Inward Challan', path: '/transition/InwardChallan', icon: Assessment },
-      { text: 'Material Consumption', path: '/transition/MaterialConsumption', icon: ShoppingCart },
-      { text: 'Return Material', path: '/transition/ReturnMaterial', icon: KeyboardReturn },
-      { text: 'Vendor Bill', path: '/transition/VendorBill', icon: ReceiptLong },
-      { text: 'Vendor Issue Material', path: '/transition/VendorIssueMaterial', icon: LocalShipping },
-    ],
-  },
-
-  {
-    text: 'O2C',
-    icon: SellSharp,
-    children: [
-      { text: 'Order Booking', path: '/O2C/OrderBooking', icon: ShoppingCartSharp },
-    ],
-  },
-];
-
 const Sidebar = ({ open, onClose, collapsed, setCollapsed }) => {
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
-  const isMobile = useMediaQuery('(max-width:600px)');
+  const isMobile = useMediaQuery("(max-width:600px)");
 
   const isCollapsed = collapsed ?? true;
-  const [expandedMenu, setExpandedMenu] = useState(() => {
-    const active = navItems.find(item =>
-      item.children?.some(child => child.path === pathname)
-    );
-    return active?.text || null;
-  });
+  const [expandedMap, setExpandedMap] = useState({});
   const [pinned, setPinned] = useState(false);
 
   useEffect(() => {
@@ -165,129 +55,217 @@ const Sidebar = ({ open, onClose, collapsed, setCollapsed }) => {
 
   const handlePinToggle = useCallback(() => {
     if (isMobile) return;
-    setPinned(prev => !prev);
+    setPinned((prev) => !prev);
   }, [isMobile]);
 
-  const handleNavigate = useCallback((path) => {
-    // set active parent menu when navigating to a child route
-    const parent = navItems.find(item => item.children?.some(child => child.path === path));
-    if (parent) setExpandedMenu(parent.text);
-    else setExpandedMenu(null);
-    navigate(path);
-    onClose?.();
-  }, [navigate, onClose]);
+  const handleNavigate = useCallback(
+    (path) => {
+      navigate(path);
+      onClose?.();
+    },
+    [navigate, onClose]
+  );
+
+  const filterItems = useCallback(
+    (items) => {
+      return items
+        .map((item) => {
+          const children = item.children ? filterItems(item.children) : [];
+          const hasAccess = item.permission ? hasPermission(item.permission) : true;
+
+          if (children.length > 0) {
+            return { ...item, children };
+          }
+
+          if (hasAccess) {
+            return { ...item, children: [] };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+    },
+    [hasPermission]
+  );
+
+  const visibleItems = useMemo(() => filterItems(SIDEBAR_CONFIG), [filterItems]);
+
+  const isItemActive = useCallback(
+    (item) => {
+      if (item.path) {
+        return pathname === item.path || pathname.startsWith(item.path + "/");
+      }
+
+      if (item.children?.length) {
+        return item.children.some(isItemActive);
+      }
+
+      return false;
+    },
+    [pathname]
+  );
+
+  useEffect(() => {
+    const expandActive = (items, map = {}) => {
+      items.forEach((item) => {
+        const key = item.path || item.text;
+        if (item.children?.length && isItemActive(item)) {
+          map[key] = true;
+          expandActive(item.children, map);
+        }
+      });
+      return map;
+    };
+
+    setExpandedMap((prev) => ({
+      ...expandActive(visibleItems),
+      ...prev,
+    }));
+  }, [visibleItems, isItemActive]);
+
+  const toggleExpand = useCallback((key) => {
+    setExpandedMap((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   const drawerWidth = isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
-  const drawerContent = useMemo(() => (
-    <>
-      <Box
-        sx={{
-          p: 3,
-          height: 100,
-          px: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderRadius: '0 0 8px 8px',
-          background: 'linear-gradient(135deg, #0b6b5f, #1976d2)',
-          color: '#fff',
-        }}
-      >
-        <Dashboard />
+  const SidebarItem = ({ item, depth = 0 }) => {
+    const hasChildren = item.children?.length > 0;
+    const isActive = isItemActive(item);
+    const key = item.path || item.text;
+    const expanded = expandedMap[key] ?? false;
+    const Icon = item.icon;
 
-        {!isMobile && !isCollapsed && (
-          <IconButton onClick={handlePinToggle} sx={{ color: '#fff' }}>
-            {pinned ?  <PushPin /> : <PushPinOutlined />}
-          </IconButton>
-        )}
+    return (
+      <Box>
+        <Tooltip title={isCollapsed ? item.text : ""} placement="right">
+          <ListItem disablePadding>
+            <ListItemButton
+              selected={isActive}
+              onClick={() =>
+                hasChildren ? toggleExpand(key) : handleNavigate(item.path)
+              }
+              sx={{
+                borderRadius: 2,
+                pl: isCollapsed ? 1 : 2 + depth * 2,
+                justifyContent: isCollapsed ? "center" : "flex-start",
+                backgroundColor: isActive ? "rgba(25,118,210,0.08)" : "transparent",
+                color: isActive ? "primary.main" : "inherit",
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: isCollapsed ? 0 : 1.5,
+                  color: isActive ? "primary.main" : "inherit",
+                }}
+              >
+                {Icon ? <Icon fontSize="small" /> : null}
+              </ListItemIcon>
 
-        {isMobile && (
-          <IconButton onClick={onClose} sx={{ color: '#fff' }}>
-            <Close /> 
-          </IconButton>
+              {!isCollapsed && (
+                <>
+                  <ListItemText primary={item.text} />
+                  {hasChildren && (expanded ? <KeyboardArrowDown /> : <KeyboardArrowUp />)}
+                </>
+              )}
+            </ListItemButton>
+          </ListItem>
+        </Tooltip>
+
+        {!isCollapsed && hasChildren && (
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <List sx={{ pl: 1 }}>
+              {item.children.map((child) => (
+                <SidebarItem key={child.path || child.text} item={child} depth={depth + 1} />
+              ))}
+            </List>
+          </Collapse>
         )}
       </Box>
+    );
+  };
 
-      <Divider />
+  const drawerContent = useMemo(
+    () => (
+      <>
+        <Box
+          sx={{
+            position: "relative",
+            p: 2,
+            height: isCollapsed ? 80 : 140,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#e6f2ee",
+          }}
+        >
+          <Box
+            component="img"
+            src={companyLogo}
+            alt="Company Logo"
+            sx={{
+              width: isCollapsed ? 36 : 64,
+              height: "auto",
+              transition: "all 0.25s ease",
+            }}
+          />
 
-      <List sx={{ p: 1 }}>
-        {navItems.map(item => {
-          const hasChildren = Boolean(item.children);
-          const expanded = expandedMenu === item.text;
+          <Box
+            sx={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+            }}
+          >
+            {!isMobile && !isCollapsed && (
+              <IconButton size="small" onClick={handlePinToggle}>
+                {pinned ? <PushPin fontSize="small" /> : <PushPinOutlined fontSize="small" />}
+              </IconButton>
+            )}
 
-          return (
-            <Box key={item.text}>
-              <Tooltip title={isCollapsed ? item.text : ''} placement="right">
-                <ListItem disablePadding>
-                  {(() => {
-                    const isActive = hasChildren
-                      ? item.children.some(child => pathname === child.path || pathname.startsWith(child.path + '/'))
-                      : item.path === pathname || pathname.startsWith(item.path + '/');
+            {isMobile && (
+              <IconButton size="small" onClick={onClose}>
+                <Close fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
 
-                    return (
-                      <ListItemButton
-                        selected={isActive}
-                        onClick={() =>
-                          hasChildren
-                            ? setExpandedMenu(expanded ? null : item.text)
-                            : handleNavigate(item.path)
-                        }
-                        sx={{
-                          borderRadius: 2,
-                          justifyContent: isCollapsed ? 'center' : 'flex-start',
-                          backgroundColor: isActive ? 'rgba(25,118,210,0.08)' : 'transparent',
-                          color: isActive ? 'primary.main' : 'inherit',
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 0, mr: isCollapsed ? 0 : 1.5, color: isActive ? 'primary.main' : 'inherit' }}>
-                          <item.icon fontSize="small" />
-                        </ListItemIcon>
-
-                        {!isCollapsed && (
-                          <>
-                            <ListItemText primary={item.text} />
-                            {hasChildren &&
-                              (expanded ? <KeyboardArrowDown /> : <KeyboardArrowUp />)}
-                          </>
-                        )}
-                      </ListItemButton>
-                    );
-                  })()}
-                </ListItem>
-              </Tooltip>
-
-              {!isCollapsed && hasChildren && (
-                <Collapse in={expanded}>
-                  <List sx={{ pl: 3 }}>
-                    {item.children.map(child => {
-                      const isChildActive = pathname === child.path || pathname.startsWith(child.path + '/');
-                      return (
-                        <ListItem key={child.text} disablePadding>
-                          <ListItemButton
-                            selected={isChildActive}
-                            onClick={() => handleNavigate(child.path)}
-                            sx={{ borderRadius: 1, backgroundColor: isChildActive ? 'rgba(25,118,210,0.08)' : 'transparent' }}
-                          >
-                            <ListItemIcon sx={{ color: isChildActive ? 'primary.main' : 'inherit' }}>
-                              <child.icon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText primary={child.text} />
-                          </ListItemButton>
-                        </ListItem>
-                      );
-                    })}
-                  </List>
-                </Collapse>
-              )}
+          {!isCollapsed && (
+            <Box
+              sx={{
+                mt: 1,
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#0b6b5f",
+              }}
+            >
+              ABC Technologies
             </Box>
-          );
-        })}
-      </List>
+          )}
+        </Box>
 
-      
-    </>
-  ), [isCollapsed, expandedMenu, pinned, isMobile, handlePinToggle, handleNavigate, onClose, pathname]);
+        <Divider />
+
+        <List sx={{ p: 1 }}>
+          {visibleItems.map((item) => (
+            <SidebarItem key={item.path || item.text} item={item} />
+          ))}
+        </List>
+      </>
+    ),
+    [
+      isCollapsed,
+      isMobile,
+      handlePinToggle,
+      onClose,
+      pinned,
+      visibleItems,
+      expandedMap,
+      pathname,
+    ]
+  );
 
   return (
     <>
@@ -296,13 +274,13 @@ const Sidebar = ({ open, onClose, collapsed, setCollapsed }) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': {
+          display: { xs: "none", sm: "block" },
+          "& .MuiDrawer-paper": {
             width: drawerWidth,
             top: 64,
-            height: 'calc(100vh - 64px)',
-            transition: 'width 0.25s',
-            overflowX: 'hidden',
+            height: "calc(100vh - 64px)",
+            transition: "width 0.25s",
+            overflowX: "hidden",
           },
         }}
       >
@@ -318,11 +296,11 @@ const Sidebar = ({ open, onClose, collapsed, setCollapsed }) => {
           disableAutoFocus: true,
         }}
         sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
+          display: { xs: "block", sm: "none" },
+          "& .MuiDrawer-paper": {
             width: EXPANDED_WIDTH,
             top: 64,
-            height: 'calc(100vh - 64px)',
+            height: "calc(100vh - 64px)",
           },
         }}
       >

@@ -1,17 +1,17 @@
 import formApiClient from "../services/formApiClient";
 
 export const getItemGroups = () => {
-  return formApiClient.get("/master/item-groups");
+  return formApiClient.get("/api/forms/master/item-groups");
 };
 
 export const createItemGroup = (data) => {
-  return formApiClient.post("/master/item-groups", data);
+  return formApiClient.post("/api/forms/master/item-groups", data);
 };
 
 export const updateItemGroup = (id, data) => {
-  return formApiClient.put(`/master/item-groups/${id}`, data);
+  return formApiClient.put(`/api/forms/master/item-groups/${id}`, data);
 };
 
 export const deleteItemGroup = (id) => {
-  return formApiClient.delete(`/master/item-groups/${id}`);
+  return formApiClient.delete(`/api/forms/master/item-groups/${id}`);
 };

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api", // fallback to localhost
+  baseURL: import.meta.env.VITE_API_URL || "/api/auth", // fallback to proxy
 });
 
 // Add Authorization header automatically if token exists

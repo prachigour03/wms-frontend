@@ -30,7 +30,7 @@ import {
   deletewarehouse,
  } from "../../api/warehouse.api.js";
  import { useDispatch } from 'react-redux';
- import { increment as incrementNotification } from '../../features/notificationSlice';
+ import { createNotification } from '../../features/notificationSlice';
 
 export default function Warehouses() {
   const dispatch = useDispatch();
@@ -108,7 +108,7 @@ export default function Warehouses() {
             const response = await createwarehouse(form);
             if (response.data.success) {
               setWarehouses((prev) => [...prev, response.data.data]);
-              dispatch(incrementNotification({
+              dispatch(createNotification({
                 severity: "success",
                 message: "Warehouse created successfully",
                 path: 'master/Warehouses',
@@ -337,3 +337,4 @@ export default function Warehouses() {
     </Box>
   );
 }
+

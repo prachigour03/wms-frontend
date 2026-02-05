@@ -7,19 +7,19 @@ import formApiClient from "../services/formApiClient";
  * Example: getSystemLogs({ user: "Admin", level: "Info" })
  */
 export const getSystemLogs = (params = {}) => {
-  return formApiClient.get("/setup/system-logs", { params });
+  return formApiClient.get("/api/forms/setup/system-logs", { params });
 };
 
 /**
  * CREATE System Log
  */
 export const createSystemLog = (data) => {
-  return formApiClient.post("/setup/system-logs", data);
+  return formApiClient.post("/api/forms/setup/system-logs", data);
 };
 
 /**
  * DELETE System Log
  */
 export const deleteSystemLog = (id) => {
-  return formApiClient.delete(`/setup/system-logs/${id}`);
+  return formApiClient.delete(`/api/forms/setup/system-logs/${id}`);
 };

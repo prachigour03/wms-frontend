@@ -31,7 +31,7 @@ import {
   deleteChartOfAccount,
 } from "../../api/ChartOfAccount.api";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function ChartOfAccounts() {
   const dispatch = useDispatch();
@@ -121,7 +121,7 @@ export default function ChartOfAccounts() {
         const response = await createChartOfAccount(dataToSend);
         if (response.data.success) {
           setData((prev) => [...prev, response.data.data]);
-          dispatch(incrementNotification({
+          dispatch(createNotification({
             severity: "success",
             message: "Chart of Account created successfully",
             path: 'master/ChartOfAccounts',
@@ -246,3 +246,4 @@ export default function ChartOfAccounts() {
     </Box>
   );
 }
+

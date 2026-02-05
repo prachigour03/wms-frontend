@@ -20,6 +20,10 @@ import {
   Tooltip,
   Snackbar,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Delete, ModeEdit } from "@mui/icons-material";
 import {
@@ -28,18 +32,15 @@ import {
   updateCity,
   deleteCity,
 } from "../../api/Cities.api.js";
+import { getStates } from "../../api/States.api.js";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function Cities() {
   const dispatch = useDispatch();
 
-  const [cities, setCities] = useState(
-    () => {
-      const saved = localStorage.getItem("cities");
-      return saved ? JSON.parse(saved) : [];
-    }
-  );
+  const [cities, setCities] = useState([]);
+  const [states, setStates] = useState([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [page, setPage] = useState(1);
@@ -59,41 +60,30 @@ export default function Cities() {
   });
 
   // -------------------------
-  // FETCH CITIES
+  // FETCH DATA
   // -------------------------
   const fetchCities = async () => {
     try {
       const response = await getCities();
-      if (response.data && response.data.success) {
-        setCities(response.data.data);
-      } else if (Array.isArray(response.data)) {
-        setCities(response.data);
-      } else {
-        console.error("Unexpected API response:", response.data);
-      }
+      setCities(response.data?.data || []);
     } catch (error) {
       console.error("Failed to fetch cities:", error.response?.data || error.message);
     }
   };
 
-  useEffect(() => {
-  const fetchData = async () => {
+  const fetchStates = async () => {
     try {
-      const response = await getCities();
-      if (response.data && response.data.success) {
-        setCities(response.data.data);
-      } else if (Array.isArray(response.data)) {
-        setCities(response.data);
-      } else {
-        console.error("Unexpected API response:", response.data);
-      }
+      const response = await getStates();
+      setStates(response.data?.data || []);
     } catch (error) {
-      console.error("Failed to fetch vendor issues:", error.response?.data || error.message);
+      console.error("Failed to fetch states:", error.response?.data || error.message);
     }
   };
 
-  fetchData();
-}, []);
+  useEffect(() => {
+    fetchCities();
+    fetchStates();
+  }, []);
 
   // -------------------------
   // PAGINATION
@@ -102,7 +92,6 @@ export default function Cities() {
     const start = (page - 1) * rowsPerPage;
     return cities.slice(start, start + rowsPerPage);
   }, [cities, page]);
-
   const pageCount = Math.ceil(cities.length / rowsPerPage) || 1;
 
   // -------------------------
@@ -116,9 +105,8 @@ export default function Cities() {
   const validateForm = () => {
     let temp = {};
     if (!form.cityName) temp.cityName = "City name is required";
-    if (!form.stateName) temp.stateName = "State name is required";
+    if (!form.stateName) temp.stateName = "State is required";
     if (!form.stateCode) temp.stateCode = "State code is required";
-
     setErrors(temp);
     return Object.keys(temp).length === 0;
   };
@@ -131,7 +119,11 @@ export default function Cities() {
   };
 
   const handleEdit = (row) => {
-    setForm(row);
+    setForm({
+      cityName: row.cityName,
+      stateName: row.stateName,
+      stateCode: row.stateCode,
+    });
     setEditId(row.id);
     setErrors({});
     setOpen(true);
@@ -139,7 +131,6 @@ export default function Cities() {
 
   const handleSave = async () => {
     if (!validateForm()) return;
-
     try {
       if (editId) {
         await updateCity(editId, form);
@@ -148,18 +139,15 @@ export default function Cities() {
       }
       fetchCities();
       setOpen(false);
-
-      dispatch(incrementNotification({
+      dispatch(createNotification({
         severity: "success",
         message: `City ${editId ? 'updated' : 'created'} successfully`,
         path: 'setup/Cities',
-        time: new Date().toISOString(), 
-        }));
-        setSnack({ open: true, severity: 'success', message: `City ${editId ? 'updated' : 'created'}` });
-
+        time: new Date().toISOString(),
+      }));
+      setSnack({ open: true, severity: 'success', message: `City ${editId ? 'updated' : 'created'}` });
     } catch (error) {
       console.error("Failed to save city:", error.response?.data || error.message);
-
     }
   };
 
@@ -172,9 +160,18 @@ export default function Cities() {
     }
   };
 
-  // -------------------------
-  // RENDER
-  // -------------------------
+  const getStateName = (row) => {
+    if (row.stateName) return row.stateName;
+    const byCode = states.find((s) => s.code === row.stateCode);
+    return byCode?.name || "";
+  };
+
+  const getStateCode = (row) => {
+    if (row.stateCode) return row.stateCode;
+    const byName = states.find((s) => s.name === row.stateName);
+    return byName?.code || "";
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -198,8 +195,8 @@ export default function Cities() {
               <TableRow key={row.id}>
                 <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
                 <TableCell>{row.cityName}</TableCell>
-                <TableCell>{row.stateName}</TableCell>
-                <TableCell>{row.stateCode}</TableCell>
+                <TableCell>{getStateName(row)}</TableCell>
+                <TableCell>{getStateCode(row)}</TableCell>
                 <TableCell>
                   <Tooltip title="Edit">
                     <IconButton onClick={() => handleEdit(row)}><ModeEdit /></IconButton>
@@ -222,9 +219,54 @@ export default function Cities() {
         <DialogTitle>{editId ? "Edit City" : "Add City"}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-            <TextField label="City Name" name="cityName" value={form.cityName} onChange={handleChange} error={!!errors.cityName} helperText={errors.cityName} fullWidth />
-            <TextField label="State Name" name="stateName" value={form.stateName} onChange={handleChange} error={!!errors.stateName} helperText={errors.stateName} fullWidth />
-            <TextField label="State Code" name="stateCode" value={form.stateCode} onChange={handleChange} error={!!errors.stateCode} helperText={errors.stateCode} fullWidth />
+            <TextField 
+              label="City Name" 
+              name="cityName" 
+              value={form.cityName} 
+              onChange={handleChange} 
+              error={!!errors.cityName} 
+              helperText={errors.cityName} 
+              fullWidth 
+            />
+
+            <FormControl fullWidth error={!!errors.stateName}>
+              <InputLabel>State</InputLabel>
+              <Select
+                name="stateName"
+                value={form.stateName}
+                onChange={(e) => {
+                  const selectedName = e.target.value;
+                  const selected = states.find((s) => s.name === selectedName);
+                  setForm((prev) => ({
+                    ...prev,
+                    stateName: selectedName,
+                    stateCode: selected?.code || "",
+                  }));
+                  setErrors((prev) => ({ ...prev, stateName: "" }));
+                }}
+                label="State"
+              >
+                {states.map((s) => (
+                  <MenuItem key={s.id} value={s.name}>
+                    {s.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.stateName && (
+                <Typography variant="caption" color="error">{errors.stateName}</Typography>
+              )}
+            </FormControl>
+
+            <TextField 
+              label="State Code" 
+              name="stateCode" 
+              value={form.stateCode} 
+              onChange={handleChange} 
+              error={!!errors.stateCode} 
+              helperText={errors.stateCode} 
+              fullWidth
+              InputProps={{ readOnly: true }}
+            />
           </Box>
         </DialogContent>
         <DialogActions>
@@ -233,11 +275,12 @@ export default function Cities() {
         </DialogActions>
 
         <Snackbar open={snack.open} autoHideDuration={6000} onClose={() => setSnack({ ...snack, open: false })}>
-        <Alert onClose={() => setSnack({ ...snack, open: false })} severity={snack.severity} sx={{ width: '100%' }}>
-          {snack.message}
-        </Alert>
+          <Alert onClose={() => setSnack({ ...snack, open: false })} severity={snack.severity} sx={{ width: '100%' }}>
+            {snack.message}
+          </Alert>
         </Snackbar>
       </Dialog>
     </Box>
   );
 }
+

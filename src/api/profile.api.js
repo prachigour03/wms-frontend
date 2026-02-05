@@ -3,8 +3,13 @@ import axios from "axios";
 /* ================================
    AXIOS INSTANCE
 ================================ */
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(
+  /\/$/,
+  ""
+);
+
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5001/api/forms/profile", // ✅ FIXED
+  baseURL: `${API_BASE_URL}/api/forms/profile`,
 });
 
 /* ================================

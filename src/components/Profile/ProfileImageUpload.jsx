@@ -2,7 +2,11 @@ import { useRef, useState, useEffect } from "react";
 import { Box, Avatar, Button } from "@mui/material";
 import { updateProfile } from "../../api/profile.api";
 
-const BACKEND_URL = "http://localhost:5001";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(
+  /\/$/,
+  ""
+);
+const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 export default function ProfileImageUpload({ profile, setProfile }) {
   const inputRef = useRef(null);
@@ -15,7 +19,10 @@ export default function ProfileImageUpload({ profile, setProfile }) {
   =============================== */
   useEffect(() => {
     if (profile?.profileImage) {
-      setImage(`${BACKEND_URL}${profile.profileImage}`);
+      const imageUrl = profile.profileImage.startsWith("http")
+        ? profile.profileImage
+        : `${BACKEND_URL}${profile.profileImage}`;
+      setImage(imageUrl);
     }
   }, [profile]);
 

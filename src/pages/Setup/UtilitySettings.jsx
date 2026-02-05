@@ -1,16 +1,6 @@
+import Grid from "@mui/material/Grid";
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Button,
-  Grid,
-  Divider,
-} from "@mui/material";
+import { Box, Paper, Typography, TextField, MenuItem, Switch, FormControlLabel, Button, Divider } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import SaveIcon from "@mui/icons-material/Save";
@@ -100,7 +90,7 @@ export default function UtilitySettings() {
         <Divider sx={{ mb: 3 }} />
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <TextField
               select
               fullWidth
@@ -117,7 +107,7 @@ export default function UtilitySettings() {
             </TextField>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <TextField
               select
               fullWidth
@@ -134,7 +124,7 @@ export default function UtilitySettings() {
             </TextField>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <TextField
               select
               fullWidth
@@ -151,7 +141,7 @@ export default function UtilitySettings() {
             </TextField>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <TextField
               select
               fullWidth

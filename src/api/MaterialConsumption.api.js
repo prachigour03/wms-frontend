@@ -9,22 +9,22 @@ import formApiClient from "../services/formApiClient";
 
 // GET all material consumption records
 export const getMaterialConsumptions = () =>
-  formApiClient.get("/transition/material-consumption");
+  formApiClient.get("/api/forms/transition/material-consumption");
 
 // CREATE material consumption
 export const createMaterialConsumption = (materialConsumptionData) =>
   formApiClient.post(
-    "/transition/material-consumption",
+    "/api/forms/transition/material-consumption",
     materialConsumptionData
   );
 
 // UPDATE material consumption
 export const updateMaterialConsumption = (id, materialConsumptionData) =>
   formApiClient.put(
-    `/transition/material-consumption/${id}`,
+    `/api/forms/transition/material-consumption/${id}`,
     materialConsumptionData
   );
 
 // DELETE material consumption
 export const deleteMaterialConsumption = (id) =>
-  formApiClient.delete(`/transition/material-consumption/${id}`);
+  formApiClient.delete(`/api/forms/transition/material-consumption/${id}`);

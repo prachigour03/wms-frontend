@@ -29,7 +29,7 @@ import {
   deleteDepartment,
 } from "../../api/Departments.api.js";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function Department() {
   const dispatch = useDispatch();
@@ -130,7 +130,7 @@ export default function Department() {
              const response = await createDepartment(form);
              if (response.data.success) {
                setDepartments((prev) => [...prev, response.data.data]);
-                dispatch(incrementNotification({
+                dispatch(createNotification({
                   severity: "success",
                   message: "Department created successfully",
                   path: 'setup/Departments',
@@ -264,3 +264,4 @@ export default function Department() {
     </Box>
   );
 }
+

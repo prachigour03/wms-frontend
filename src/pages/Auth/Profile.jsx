@@ -1,12 +1,6 @@
+import Grid from "@mui/material/Grid";
 import { useEffect, useState } from "react";
-import {
-  Grid,
-  Box,
-  Typography,
-  Paper,
-  TextField,
-  Button,
-} from "@mui/material";
+import { Box, Typography, Paper, TextField, Button } from "@mui/material";
 import ProfileImageUpload from "../../components/Profile/ProfileImageUpload";
 import { getMyProfile, updateProfileData } from "../../api/profile.api";
 
@@ -109,7 +103,7 @@ const Profile = () => {
         </Typography>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <Typography variant="subtitle2">First Name</Typography>
             <TextField
               fullWidth
@@ -120,7 +114,7 @@ const Profile = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <Typography variant="subtitle2">Last Name</Typography>
             <TextField
               fullWidth
@@ -131,7 +125,7 @@ const Profile = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <Typography variant="subtitle2">Email</Typography>
             <TextField
               fullWidth
@@ -142,7 +136,7 @@ const Profile = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <Typography variant="subtitle2">Phone</Typography>
             <TextField
               fullWidth
@@ -153,7 +147,7 @@ const Profile = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <Typography variant="subtitle2">Role</Typography>
             <TextField
               fullWidth
@@ -164,7 +158,7 @@ const Profile = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={ 12 } md={ 6 }>
             <Typography variant="subtitle2">Department</Typography>
             <TextField
               fullWidth
@@ -175,7 +169,7 @@ const Profile = () => {
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid item xs={ 12 }>
             <Typography variant="subtitle2">Bio</Typography>
             <TextField
               fullWidth

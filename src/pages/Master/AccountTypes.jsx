@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 import {
   Box,
   Paper,
@@ -115,7 +115,7 @@ export default function AccountTypes() {
           const response = await createAccountType(form);
           if (response.data.success) {
             setData((prev) => [...prev, response.data.data]);
-            dispatch(incrementNotification({
+            dispatch(createNotification({
                         title: 'Account Type added',
                         message: response.data.data?.accountTypeName ? `Account Type "${response.data.data.accountTypeName}" added` : 'Account Type added',
                         path: '/master/AccountTypes',
@@ -267,3 +267,4 @@ export default function AccountTypes() {
     </Box>
   );
 }
+

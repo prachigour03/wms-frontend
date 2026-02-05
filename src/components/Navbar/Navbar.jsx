@@ -5,7 +5,6 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
 import Avatar from '@mui/material/Avatar';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -16,11 +15,16 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import { alpha, styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-
 import { getMyProfile } from '../../api/profile.api';
 import { useSelector, useDispatch } from 'react-redux';
-import { clear as clearNotifications, markAsRead } from '../../features/notificationSlice';
+import { clearNotifications, markAsReads, fetchNotifications } from '../../features/notificationSlice';
 import { useRef } from 'react';
+
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(
+  /\/$/,
+  ""
+);
+const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 /* ================= STYLES ================= */
 const Search = styled('div')(({ theme }) => ({
@@ -45,8 +49,8 @@ const StyledInput = styled(InputBase)(() => ({
 function Navbar({ onMenuClick }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const count = useSelector((s) => s.notifications.count);
   const list = useSelector((s) => s.notifications.list);
+  const count = list.filter((n) => !n.read).length;
   const prevCountRef = useRef(count);
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -76,6 +80,17 @@ function Navbar({ onMenuClick }) {
     prevCountRef.current = count;
   }, [count, list]);
 
+  useEffect(() => {
+    dispatch(fetchNotifications());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      dispatch(fetchNotifications());
+    }, 15000);
+    return () => clearInterval(id);
+  }, [dispatch]);
+
   /* ================= FETCH PROFILE ================= */
   useEffect(() => {
     const loadProfile = async () => {
@@ -94,7 +109,10 @@ function Navbar({ onMenuClick }) {
   const handleAvatarOpen = (e) => setAnchorEl(e.currentTarget);
   const handleAvatarClose = () => setAnchorEl(null);
 
-  const handleNotifOpen = (e) => setNotifAnchorEl(e.currentTarget);
+  const handleNotifOpen = (e) => {
+    setNotifAnchorEl(e.currentTarget);
+    dispatch(fetchNotifications());
+  };
   const handleNotifClose = () => setNotifAnchorEl(null);
 
   const handleLogout = () => {
@@ -103,7 +121,9 @@ function Navbar({ onMenuClick }) {
   };
 
   const avatarSrc = profile?.profileImage
-    ? `http://localhost:5001${profile.profileImage}`
+    ? profile.profileImage.startsWith("http")
+      ? profile.profileImage
+      : `${BACKEND_URL}${profile.profileImage}`
     : "";
 
   const avatarFallback =
@@ -120,8 +140,6 @@ function Navbar({ onMenuClick }) {
           <IconButton color="inherit" onClick={onMenuClick}>
             <MenuIcon />
           </IconButton>
-
-          
         </Box>
 
         {/* RIGHT */}
@@ -165,7 +183,7 @@ function Navbar({ onMenuClick }) {
                 <MenuItem
                   key={notif.id}
                   onClick={() => {
-                    dispatch(markAsRead(notif.id));
+                    dispatch(markAsReads(notif.id));
                     handleNotifClose();
                   }}
                   sx={{ maxWidth: 300 }}
@@ -175,7 +193,7 @@ function Navbar({ onMenuClick }) {
                   </Typography>
                 </MenuItem>
               )),
-              <MenuItem key="view-all" onClick={() => { navigate('/notification'); handleNotifClose(); }}>
+              <MenuItem key="view-all" onClick={() => { navigate('/Notification'); handleNotifClose(); }}>
                 View All Notifications
               </MenuItem>,
               <MenuItem key="clear-all" onClick={() => { dispatch(clearNotifications()); handleNotifClose(); }}>

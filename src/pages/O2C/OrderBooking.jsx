@@ -1,49 +1,54 @@
-import React, { useState, useMemo, useEffect} from "react";
-
+import React, { useState, useMemo, useEffect } from "react";
 import {
-  Box, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   Paper,
-  TableHead, 
-  TableRow, 
-  IconButton, 
-  Typography, 
+  TableHead,
+  TableRow,
+  IconButton,
+  Typography,
   Button,
-  TextField, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   DialogActions,
-  Snackbar, 
-  Alert, 
+  Snackbar,
+  Alert,
   Pagination,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { Delete } from "@mui/icons-material";
-import { ModeEdit } from "@mui/icons-material";
-import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
-import { 
-  getOrders, 
-  createOrder, 
-  updateOrder, 
-  deleteOrder 
+import { Delete, ModeEdit } from "@mui/icons-material";
+import { useDispatch } from "react-redux";
+import { createNotification } from "../../features/notificationSlice";
+
+import {
+  getOrders,
+  createOrder,
+  updateOrder,
+  deleteOrder,
 } from "../../api/orderBooking.api";
 
-export default function OrderBooking() {
-    const dispatch = useDispatch();
+import { getItems } from "../../api/Item.api";
+import { getLocations } from "../../api/Locations.api";
 
-  const [orders, setOrders] = useState(
-    () => {
-      const saved = localStorage.getItem("orders");
-      return saved ? JSON.parse(saved) : [];
-    }
-  );
+export default function OrderBooking() {
+  const dispatch = useDispatch();
+
+  const [orders, setOrders] = useState([]);
+  const [items, setItems] = useState([]);
+  const [locations, setLocations] = useState([]);
+
   const [page, setPage] = useState(1);
   const rowsPerPage = 5;
+
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
 
@@ -51,57 +56,59 @@ export default function OrderBooking() {
     tranditionId: "",
     customer: "",
     date: "",
+    itemName: "",
     location: "",
     finalRate: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [snack, setSnack] = useState({ open: false, severity: "info", message: "" });
+  const [snack, setSnack] = useState({
+    open: false,
+    severity: "success",
+    message: "",
+  });
 
+  // FETCH DATA
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
-        const response = await getOrders();
-        if (response.data && response.data.success) {
-          setOrders(response.data.data);
-        } else if (Array.isArray(response.data)) {
-          setOrders(response.data);
-        } else {
-          console.error("Unexpected API response:", response.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch orders:", error.response?.data || error.message);
+        const [orderRes, itemRes, locationRes] = await Promise.all([
+          getOrders(),
+          getItems(),
+          getLocations(),
+        ]);
+
+        if (orderRes.data?.success) setOrders(orderRes.data.data);
+        if (itemRes.data?.success) setItems(itemRes.data.data);
+        if (locationRes.data?.success) setLocations(locationRes.data.data);
+      } catch (err) {
+        console.error("Fetch error", err);
       }
     };
-  
-    fetchData();
+
+    fetchAll();
   }, []);
 
-  // Save orders to localStorage whenever orders state changes
-  useEffect(() => {
-    localStorage.setItem("orders", JSON.stringify(orders));
-  }, [orders]);
+  // PAGINATION
+  const paginatedOrders = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    return orders.slice(start, start + rowsPerPage);
+  }, [orders, page]);
 
+  const pageCount = Math.ceil(orders.length / rowsPerPage) || 1;
 
-  // PAGINATION WITH SEARCH & SORT
-    const paginatedOrders = useMemo(() => {
-      const start = (page - 1) * rowsPerPage;
-      return orders.slice(start, start + rowsPerPage);
-    }, [orders, page]);
-  
-    const pageCount = Math.ceil(orders.length / rowsPerPage) || 1;
-
-
-  //Validation can be added here
+  // VALIDATION
   const validateForm = () => {
     const newErrors = {};
-    if (!form.tranditionId) newErrors.tranditionId = "Transition ID is required";
-    if (!form.customer) newErrors.customer = "Customer is required";
-    if (!form.date) newErrors.date = "Date is required";
-    if (!form.location) newErrors.location = "Location is required";
-    if (!form.finalRate) newErrors.finalRate = "Final Rate is required";
+    if (!form.tranditionId) newErrors.tranditionId = "Required";
+    if (!form.customer) newErrors.customer = "Required";
+    if (!form.date) newErrors.date = "Required";
+    if (!form.itemName) newErrors.itemName = "Required";
+    if (!form.location) newErrors.location = "Required";
+    if (!form.finalRate) newErrors.finalRate = "Required";
 
-    return newErrors;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
@@ -111,122 +118,150 @@ export default function OrderBooking() {
 
   // SAVE
   const handleSave = async () => {
-      if (!validateForm()) return;
-  
-      try {
-        if (editId) {
-          const response = await updateOrder(editId, form);
-          if (response.data.success) {
-            setOrders((prev) =>
-              prev.map((d) => (d.id === editId ? response.data.data : d))
-            );
-          }
-        } else {
-          const response = await createOrder(form);
-          if (response.data.success) {
-            setOrders((prev) => [...prev, response.data.data]);
-            dispatch(incrementNotification({
-              severity: "success",
-              message: "Order created successfully",
-              path: 'transition/OrderBooking',
-              time: new Date().toISOString(),
-              }));  
-              setSnack({ open: true, severity: 'success', message: 'Order added' });
-          }
-        }
-  
-        setOpen(false);
-        setEditId(null);
-        setForm({
-          tranditionId: "",
-          customer: "",
-          date: "",
-          location: "",
-          finalRate: "",
-        });
-      } catch (error) {
-        console.error("Failed to save vendor issue:", error.response?.data || error.message);
-      }
-    };
+    if (!validateForm()) return;
 
-  // EDIT
+    try {
+      if (editId) {
+        const res = await updateOrder(editId, form);
+        if (res.data.success) {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === editId ? res.data.data : o))
+          );
+        }
+      } else {
+        const res = await createOrder(form);
+        if (res.data.success) {
+          setOrders((prev) => [...prev, res.data.data]);
+          dispatch(
+            dispatch(
+              createNotification({
+                title: "New Order Created",
+                message: `Order ${form.tranditionId} created successfully`,
+                type: "ORDER",
+              })
+            )
+
+          );
+        }
+      }
+
+      setOpen(false);
+      setEditId(null);
+      setForm({
+        tranditionId: "",
+        customer: "",
+        date: "",
+        itemName: "",
+        location: "",
+        finalRate: "",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleEdit = (order) => {
     setForm(order);
     setEditId(order.id);
     setOpen(true);
   };
 
-  // DELETE
   const handleDelete = async (id) => {
-      try {
-        const response = await deleteOrder(id);
-        if (response.data.success) {
-          setOrders((prev) => prev.filter((d) => d.id !== id));
-        }
-      } catch (error) {
-        console.error("Failed to delete order:", error.response?.data || error.message);
+    try {
+      const res = await deleteOrder(id);
+      if (res.data.success) {
+        setOrders((prev) => prev.filter((o) => o.id !== id));
       }
-    };
-
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 3 }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>Order Booking</Typography>
-        <Button variant="contained" sx={{ mb: 2 }} onClick={() => setOpen(true)}>Add Order</Button>
+      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography variant="h5">Order Booking</Typography>
+        <Button variant="contained" onClick={() => setOpen(true)}>
+          Add Order
+        </Button>
       </Box>
 
-      <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>S.no</TableCell>
-            <TableCell>Transition ID</TableCell>
-            <TableCell>Customer</TableCell>
-            <TableCell>Date</TableCell>
-            <TableCell>Location</TableCell>
-            <TableCell>Final Rate</TableCell>
-            <TableCell>Action</TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {paginatedOrders.map((order, i) => (
-            <TableRow key={order.id}>
-              <TableCell>{(page - 1) * rowsPerPage + i + 1}</TableCell>
-              <TableCell>{order.tranditionId}</TableCell>
-              <TableCell>{order.customer}</TableCell>
-              <TableCell>{order.date}</TableCell>
-              <TableCell>{order.location}</TableCell>
-              <TableCell>{order.finalRate}</TableCell>
-              <TableCell>
-                <Tooltip title="Edit">
-                  <IconButton onClick={() => handleEdit(order)}><ModeEdit /></IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                  <IconButton color="error" onClick={() => handleDelete(order.id)}><Delete /></IconButton>
-                </Tooltip>
-                </TableCell>
+      <TableContainer component={Paper} sx={{ mt: 2 }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>S.No</TableCell>
+              <TableCell>Transition ID</TableCell>
+              <TableCell>Customer</TableCell>
+              <TableCell>Item</TableCell>
+              <TableCell>Location</TableCell>
+              <TableCell>Rate</TableCell>
+              <TableCell>Action</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {paginatedOrders.map((o, i) => (
+              <TableRow key={o.id}>
+                <TableCell>{(page - 1) * rowsPerPage + i + 1}</TableCell>
+                <TableCell>{o.tranditionId}</TableCell>
+                <TableCell>{o.customer}</TableCell>
+                <TableCell>{o.itemName || "-"}</TableCell>
+                <TableCell>{o.location}</TableCell>
+                <TableCell>{o.finalRate}</TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleEdit(o)}>
+                    <ModeEdit />
+                  </IconButton>
+                  <IconButton color="error" onClick={() => handleDelete(o.id)}>
+                    <Delete />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </TableContainer>
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", py: 2 }}>
-        <Pagination count={pageCount} page={page} onChange={(e, v) => setPage(v)} />
-      </Box>
+      <Pagination
+        sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}
+        count={pageCount}
+        page={page}
+        onChange={(e, v) => setPage(v)}
+      />
 
+      {/* DIALOG */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
         <DialogTitle>{editId ? "Edit Order" : "Add Order"}</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          <TextField fullWidth margin="dense" label="Transition ID" name="tranditionId" value={form.tranditionId} onChange={handleChange} helperText={errors.tranditionId} />
-          <TextField fullWidth margin="dense" label="Customer" name="customer" value={form.customer} onChange={handleChange} error={!!errors.customer} helperText={errors.customer} />
-          <TextField fullWidth margin="dense" label="Date" name="date" value={form.date} onChange={handleChange} error={!!errors.date} helperText={errors.date} />
-          <TextField fullWidth margin="dense" label="Location" name="location" value={form.location} onChange={handleChange} error={!!errors.location} helperText={errors.location} />
-          <TextField fullWidth margin="dense" label="Final Rate" name="finalRate" value={form.finalRate} onChange={handleChange} error={!!errors.finalRate} helperText={errors.finalRate} />
-          </Box>
+          <TextField fullWidth margin="dense" label="Transition ID" name="tranditionId" value={form.tranditionId} onChange={handleChange} />
+          <TextField fullWidth margin="dense" label="Customer" name="customer" value={form.customer} onChange={handleChange} />
+          <TextField fullWidth margin="dense" type="date" name="date" value={form.date} onChange={handleChange} />
+
+          {/* ITEM SELECTOR */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Item</InputLabel>
+            <Select name="itemName" value={form.itemName} onChange={handleChange}>
+              {items.map((item) => (
+                <MenuItem key={item.id} value={item.itemName}>
+                  {item.itemName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* LOCATION SELECTOR */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Location</InputLabel>
+            <Select name="location" value={form.location} onChange={handleChange}>
+              {locations.map((loc) => (
+                <MenuItem key={loc.id} value={loc.locationName}>
+                  {loc.locationName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField fullWidth margin="dense" label="Final Rate" name="finalRate" value={form.finalRate} onChange={handleChange} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
@@ -240,3 +275,4 @@ export default function OrderBooking() {
     </Box>
   );
 }
+

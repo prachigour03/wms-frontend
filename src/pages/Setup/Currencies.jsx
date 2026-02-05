@@ -29,7 +29,7 @@ import {
   deleteCurrency,
 } from "../../api/Currencies.api.js";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function Currencies() {
   const dispatch = useDispatch();
@@ -127,7 +127,7 @@ export default function Currencies() {
           const response = await createCurrency(form);
           if (response.data.success) {
             setData((prev) => [...prev, response.data.data]);
-            dispatch(incrementNotification({
+            dispatch(createNotification({
               severity: "success",
               message: "Currency created successfully",
               path: 'setup/Currencies',
@@ -309,3 +309,4 @@ export default function Currencies() {
     </Box>
   );
 }
+

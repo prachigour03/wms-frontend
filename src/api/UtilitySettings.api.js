@@ -5,14 +5,14 @@ import formApiClient from "../services/formApiClient";
  * GET ALL UTILITY SETTINGS
  */
 export const getUtilitySettings = () => {
-  return formApiClient.get("/setup/utility-settings");
+  return formApiClient.get("/api/forms/setup/utility-settings");
 };
 
 /**
  * GET UTILITY SETTING BY KEY
  */
 export const getUtilitySettingByKey = (key) => {
-  return formApiClient.get(`/setup/utility-settings/${key}`);
+  return formApiClient.get(`/api/forms/setup/utility-settings/${key}`);
 };
 
 /**
@@ -20,7 +20,7 @@ export const getUtilitySettingByKey = (key) => {
  * payload: { key: "dateFormat", value: "YYYY-MM-DD" }
  */
 export const upsertUtilitySetting = (data) => {
-  return formApiClient.post("/setup/utility-settings", data);
+  return formApiClient.post("/api/forms/setup/utility-settings", data);
 };
 
 /**
@@ -35,12 +35,12 @@ export const upsertUtilitySetting = (data) => {
  * }
  */
 export const upsertMultipleUtilitySettings = (data) => {
-  return formApiClient.put("/setup/utility-settings/bulk", data);
+  return formApiClient.put("/api/forms/setup/utility-settings/bulk", data);
 };
 
 /**
  * DELETE SETTING BY KEY
  */
 export const deleteUtilitySetting = (key) => {
-  return formApiClient.delete(`/setup/utility-settings/${key}`);
+  return formApiClient.delete(`/api/forms/setup/utility-settings/${key}`);
 };

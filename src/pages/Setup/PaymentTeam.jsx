@@ -152,11 +152,11 @@ export default function PaymentTeam() {
     <Box sx={{ p: 3 }}>
       <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        Payment Team
+        Payment Terms
       </Typography>
 
       <Button variant="contained" sx={{ mb: 2 }} onClick={() => setOpen(true)}>
-        Add Payment Team
+        Add Payment Terms
       </Button>
 </Box>
       <TableContainer component={Paper}>
@@ -218,7 +218,7 @@ export default function PaymentTeam() {
       {/* Add / Edit Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
         <DialogTitle>
-          {editId ? "Edit Payment Team" : "Add Payment Team"}
+          {editId ? "Edit Payment Terms" : "Add Payment Terms"}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
@@ -262,7 +262,7 @@ export default function PaymentTeam() {
               fullWidth
             />
 
-            <Switch
+            <TextField
               select
               label="Status"
               name="status"
@@ -272,7 +272,7 @@ export default function PaymentTeam() {
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
-            </Switch>
+            </TextField>
           </Box>
         </DialogContent>
 

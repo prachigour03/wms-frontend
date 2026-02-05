@@ -1,18 +1,6 @@
+import Grid from "@mui/material/Grid";
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Divider,
-  Button,
-  TextField,
-  Chip,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  Avatar,
-} from "@mui/material";
+import { Box, Paper, Typography, Divider, Button, TextField, Chip, CircularProgress, Snackbar, Alert, Avatar } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,11 +11,11 @@ import {
   createCompanyDetail,
 } from "../../api/CompanyDetail.api";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 /* ---------------- View Field ---------------- */
 const ViewField = ({ label, value }) => (
-  <Grid item xs={12} md={4}>
+  <Grid item xs={ 12 } md={ 4 }>
     <Typography variant="caption" color="text.secondary">
       {label}
     </Typography>
@@ -113,7 +101,7 @@ export default function CompanyDetail() {
       setEditMode(false);
       fetchCompanyDetail();
 
-      dispatch(incrementNotification({
+      dispatch(createNotification({
         severity: "success",
         message: `Company details ${isCreated ? "updated" : "created"} successfully`,
         path: 'setup/CompanyDetail',
@@ -189,7 +177,7 @@ export default function CompanyDetail() {
     <ViewField label="State" value={data.state} />
     <ViewField label="City" value={data.city} />
 
-    <Grid item xs={12}>
+    <Grid item xs={ 12 }>
       <Typography variant="caption">Address</Typography>
       <Typography fontWeight={500}>{data.address || "-"}</Typography>
     </Grid>
@@ -203,7 +191,7 @@ export default function CompanyDetail() {
             {Object.keys(emptyCompany).map(
               (key) =>
                 key !== "status" && (
-                  <Grid item xs={12} md={4} key={key}>
+                  <Grid key={key} item xs={ 12 } md={ 4 }>
                     <TextField
                       label={key.replace(/([A-Z])/g, " $1")}
                       name={key}
@@ -225,3 +213,4 @@ export default function CompanyDetail() {
     </Box>
   );
 }
+

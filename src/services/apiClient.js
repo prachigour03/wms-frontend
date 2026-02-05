@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:5001/api/auth",
+  baseURL: import.meta.env.VITE_API_URL || "/api/auth",
 });
 
 apiClient.interceptors.request.use((config) => {

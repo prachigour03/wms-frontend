@@ -29,7 +29,7 @@ import {
   deleteState,
 } from "../../api/States.api";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function State() {
   const dispatch = useDispatch();
@@ -119,7 +119,7 @@ export default function State() {
             if (response.data.success) {
               setData((prev) => [...prev, response.data.data]);
 
-              dispatch(incrementNotification({
+              dispatch(createNotification({
                 severity: "success",
                 message: "State created successfully",
                 path: 'setup/States',
@@ -249,3 +249,4 @@ export default function State() {
     </Box>
   );
 }
+

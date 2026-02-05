@@ -32,7 +32,7 @@ import {
   deleteSubsidiary,
 } from "../../api/Subsidiaries.api";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function Subsidiaries() {
   const dispatch = useDispatch();
@@ -129,7 +129,7 @@ export default function Subsidiaries() {
           if (response.data.success) {
             setData((prev) => [...prev, response.data.data]);
 
-            dispatch(incrementNotification({
+            dispatch(createNotification({
               severity: "success",
               message: "Subsidiary created successfully",
               path: 'setup/Subsidiaries',
@@ -330,7 +330,7 @@ export default function Subsidiaries() {
               fullWidth
             />
 
-            <Switch
+            <TextField
               select
               label="Status"
               name="status"
@@ -340,7 +340,7 @@ export default function Subsidiaries() {
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
-            </Switch>
+            </TextField>
           </Box>
         </DialogContent>
 
@@ -361,3 +361,4 @@ export default function Subsidiaries() {
     </Box>
   );
 }
+

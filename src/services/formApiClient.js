@@ -1,14 +1,13 @@
-// src/api/formApiClient.js
 import axios from "axios";
 
 const formApiClient = axios.create({
-  baseURL: "http://localhost:5001/api/forms", // base URL for all forms
-  withCredentials: true, // in case you need cookies/session
+  baseURL: import.meta.env.VITE_API_URL, 
+  withCredentials: true, 
 });
 
-// Optional: request interceptor (e.g., add auth token if needed)
+// Optional: request interceptor 
 formApiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // optional if forms are protected
+  const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

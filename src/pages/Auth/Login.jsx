@@ -1,23 +1,10 @@
+import Grid from "@mui/material/Grid";
 import React, { useState } from "react";
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Grid,
-  Divider,
-  Avatar,
-  FormControlLabel,
-  Checkbox,
-  Link as MuiLink,
-  Snackbar,
-  Alert
-} from "@mui/material";
+import { Box, TextField, Button, Typography, Paper, Divider, Avatar, FormControlLabel, Checkbox, Link as MuiLink, Snackbar, Alert } from "@mui/material";
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import loginImg from '../../assets/loginImg.jpg';
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import apiClient from "../../services/apiClient";
+import { useAuth } from "../../auth/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -25,6 +12,7 @@ export default function Login() {
   const [remember, setRemember] = useState(false);
   const [snack, setSnack] = useState({ open: false, severity: 'info', message: '' });
   const navigate = useNavigate();
+  const { login } = useAuth();
 
 //   useEffect(() => {
 //   const remembered = localStorage.getItem("rememberUser");
@@ -55,18 +43,8 @@ export default function Login() {
   }
 
   try {
-    const res = await apiClient.post("/login", {
-      email,
-      password,
-    });
-
-    const { token, user } = res.data;
-
-    // Save JWT token
-    localStorage.setItem("token", token);
-
-    // Save user (optional)
-    localStorage.setItem("currentUser", JSON.stringify(user));
+    const res = await login(email, password);
+    const { user } = res;
 
     // Remember email
     if (remember) {
@@ -115,15 +93,12 @@ export default function Login() {
         <Grid container minHeight={600}>
           {/* LEFT SIDE – LOGIN FORM */}
           <Grid
-            xs={12}
-            md={6}
             sx={{
               p: { xs: 4, md: 6 },
               display: "flex",
               flexDirection: "column",
               justifyContent: "center"
-            }}
-          >
+            }} item xs={ 12 } md={ 6 }>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
               <Avatar sx={{ bgcolor: 'primary.main', width: 64, height: 64 }}>
                 <LockOutlinedIcon sx={{ fontSize: 32 }} />
@@ -186,8 +161,6 @@ export default function Login() {
 
           {/* RIGHT SIDE – ILLUSTRATION + MARKETING */}
           <Grid
-            xs={12}
-            md={6}
             sx={{
               background:
                 "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
@@ -195,8 +168,7 @@ export default function Login() {
               alignItems: "center",
               justifyContent: "center",
               position: "relative"
-            }}
-          >
+            }} item xs={ 12 } md={ 6 }>
             <Box textAlign="center" px={6} maxWidth={420}>
               <Box
                 component="img"

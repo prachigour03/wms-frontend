@@ -13,43 +13,31 @@ import {
   Button,
 } from "@mui/material";
 import { CheckCircle, Delete } from "@mui/icons-material";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  markAsRead,
-  removeNotification,
-  clear,
-} from "../../features/notificationSlice";
+import { useCrudNotification } from "../../hooks/useCrudNotification";
 
 const Notification = () => {
-  const dispatch = useDispatch();
-  const { list } = useSelector((s) => s.notifications);
-  console.log(list)
+  const { list, loading, markRead, remove, clearAll } = useCrudNotification();
 
   return (
     <Box p={3}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
+      <Stack direction="row" justifyContent="space-between" mb={2}>
         <Typography variant="h5" fontWeight={700}>
           Notifications
         </Typography>
 
         {list.length > 0 && (
-          <Button
-            color="error"
-            variant="outlined"
-            onClick={() => dispatch(clear())}
-          >
+          <Button color="error" variant="outlined" onClick={clearAll}>
             Clear All
           </Button>
         )}
       </Stack>
 
       <Paper elevation={2}>
-        {list.length === 0 ? (
+        {loading ? (
+          <Box p={4} textAlign="center">
+            <Typography color="text.secondary">Loading...</Typography>
+          </Box>
+        ) : list.length === 0 ? (
           <Box p={4} textAlign="center">
             <Typography color="text.secondary">
               No notifications available
@@ -60,29 +48,15 @@ const Notification = () => {
             {list.map((item, index) => (
               <React.Fragment key={item.id}>
                 <ListItem
-                  alignItems="flex-start"
-                  sx={{
-                    bgcolor: item.read ? "transparent" : "#f5faff",
-                  }}
+                  sx={{ bgcolor: item.read ? "transparent" : "#f5faff", alignItems: "flex-start" }}
                   secondaryAction={
                     <Stack direction="row" spacing={1}>
                       {!item.read && (
-                        <IconButton
-                          color="success"
-                          onClick={() =>
-                            dispatch(markAsRead(item.id))
-                          }
-                        >
+                        <IconButton color="success" onClick={() => markRead(item.id)}>
                           <CheckCircle />
                         </IconButton>
                       )}
-
-                      <IconButton
-                        color="error"
-                        onClick={() =>
-                          dispatch(removeNotification(item.id))
-                        }
-                      >
+                      <IconButton color="error" onClick={() => remove(item.id)}>
                         <Delete />
                       </IconButton>
                     </Stack>
@@ -91,19 +65,13 @@ const Notification = () => {
                   <ListItemText
                     primary={
                       <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography fontWeight={600}>
-                          {item.title}
-                        </Typography>
-                        {!item.read && (
-                          <Chip size="small" label="New" color="primary" />
-                        )}
+                        <Typography fontWeight={600}>{item.title}</Typography>
+                        {!item.read && <Chip size="small" label="New" color="primary" />}
                       </Stack>
                     }
                     secondary={
                       <>
-                        <Typography variant="body2">
-                          {item.message}
-                        </Typography>
+                        <Typography variant="body2">{item.message}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           {new Date(item.createdAt).toLocaleString()}
                         </Typography>
@@ -111,7 +79,6 @@ const Notification = () => {
                     }
                   />
                 </ListItem>
-
                 {index !== list.length - 1 && <Divider />}
               </React.Fragment>
             ))}

@@ -2,17 +2,17 @@
 import formApiClient from "../services/formApiClient";
 
 export const getPaymentTeams = () => {
-  return formApiClient.get("/setup/payment-teams");
+  return formApiClient.get("/api/forms/setup/payment-teams");
 };
 
 export const createPaymentTeam = (data) => {
-  return formApiClient.post("/setup/payment-teams", data);
+  return formApiClient.post("/api/forms/setup/payment-teams", data);
 };
 
 export const updatePaymentTeam = (id, data) => {
-  return formApiClient.put(`/setup/payment-teams/${id}`, data);
+  return formApiClient.put(`/api/forms/setup/payment-teams/${id}`, data);
 };
 
 export const deletePaymentTeam = (id) => {
-  return formApiClient.delete(`/setup/payment-teams/${id}`);
+  return formApiClient.delete(`/api/forms/setup/payment-teams/${id}`);
 };

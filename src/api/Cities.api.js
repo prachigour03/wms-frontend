@@ -1,17 +1,17 @@
 import formApiClient from "../services/formApiClient";
 
 export const getCities = () => {
-  return formApiClient.get("/setup/cities");
+  return formApiClient.get("/api/forms/setup/cities");
 };
 
 export const createCity = (data) => {
-  return formApiClient.post("/setup/cities", data);
+  return formApiClient.post("/api/forms/setup/cities", data);
 };
 
 export const updateCity = (id, data) => {
-  return formApiClient.put(`/setup/cities/${id}`, data);
+  return formApiClient.put(`/api/forms/setup/cities/${id}`, data);
 };
 
 export const deleteCity = (id) => {
-  return formApiClient.delete(`/setup/cities/${id}`);
+  return formApiClient.delete(`/api/forms/setup/cities/${id}`);
 };

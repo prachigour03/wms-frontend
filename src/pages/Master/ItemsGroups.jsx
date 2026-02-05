@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 import {
   Box,
   Paper,
@@ -32,7 +32,7 @@ import {
   getItemGroups,
   updateItemGroup,
   deleteItemGroup,
-} from "../../api/ItemGroup.api";
+} from "../../api/ItemGroup.api.js";
 
 export default function ItemsGroups() {
   const dispatch = useDispatch();
@@ -132,7 +132,7 @@ export default function ItemsGroups() {
         const response = await createItemGroup(formData);
         if (response.data.success) {
           setData((prev) => [...prev, response.data.data]);
-          dispatch(incrementNotification({
+          dispatch(createNotification({
             title: 'Item Group added',
             message: response.data.data?.groupName ? `Item Group "${response.data.data.groupName}" added` : 'Item Group added',
             path: '/master/ItemsGroups',
@@ -301,3 +301,4 @@ export default function ItemsGroups() {
     </Box>
   );
 }
+

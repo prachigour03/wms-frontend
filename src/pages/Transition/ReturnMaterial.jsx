@@ -13,7 +13,7 @@ import {
   deleteReturnMaterial
 } from "../../api/ReturnMaterial.api";
 import { useDispatch } from 'react-redux';
-import { increment as incrementNotification } from '../../features/notificationSlice';
+import { createNotification } from '../../features/notificationSlice';
 
 export default function ReturnMaterial() {
     const dispatch = useDispatch();
@@ -94,7 +94,7 @@ export default function ReturnMaterial() {
         const response = await createReturnMaterial(form);
         if (response.data.success) {
           setData(prev => [...prev, response.data.data]);
-          dispatch(incrementNotification({
+          dispatch(createNotification({
             severity: "success",
             message: "Return Material created successfully",
             path: 'transition/ReturnMaterial',
@@ -213,3 +213,4 @@ export default function ReturnMaterial() {
     </Box>
   );
 }
+
