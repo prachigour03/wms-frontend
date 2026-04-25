@@ -3,6 +3,7 @@ import formApiClient from "../services/formApiClient";
 
 // GET orders (example)
 export const getOrders = () => formApiClient.get("/api/forms/o2c/order-booking");
+export const getOrderBookings = getOrders;
 
 // CREATE order
 export const createOrder = (orderData) =>

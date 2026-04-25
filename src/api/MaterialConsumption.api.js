@@ -1,30 +1,17 @@
-// src/api/MaterialConsumption.api.js
 import formApiClient from "../services/formApiClient";
 
-/**
- * ===============================
- * MATERIAL CONSUMPTION APIs
- * ===============================
- */
+const BASE_URL = "/api/forms/transition/material-consumption";
 
-// GET all material consumption records
-export const getMaterialConsumptions = () =>
-  formApiClient.get("/api/forms/transition/material-consumption");
+export const getMaterialConsumptions = () => formApiClient.get(BASE_URL);
 
-// CREATE material consumption
-export const createMaterialConsumption = (materialConsumptionData) =>
-  formApiClient.post(
-    "/api/forms/transition/material-consumption",
-    materialConsumptionData
-  );
+export const getMaterialConsumptionById = (id) => formApiClient.get(`${BASE_URL}/${id}`);
 
-// UPDATE material consumption
-export const updateMaterialConsumption = (id, materialConsumptionData) =>
-  formApiClient.put(
-    `/api/forms/transition/material-consumption/${id}`,
-    materialConsumptionData
-  );
+export const createMaterialConsumption = (data) => formApiClient.post(BASE_URL, data);
 
-// DELETE material consumption
-export const deleteMaterialConsumption = (id) =>
-  formApiClient.delete(`/api/forms/transition/material-consumption/${id}`);
+export const updateMaterialConsumption = (id, data) => formApiClient.put(`${BASE_URL}/${id}`, data);
+
+export const deleteMaterialConsumption = (id) => formApiClient.delete(`${BASE_URL}/${id}`);
+
+export const confirmMaterialConsumption = (id) => formApiClient.patch(`${BASE_URL}/${id}/confirm`);
+
+export const cancelMaterialConsumption = (id) => formApiClient.patch(`${BASE_URL}/${id}/cancel`);

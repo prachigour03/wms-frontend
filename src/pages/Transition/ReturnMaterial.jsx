@@ -1,216 +1,179 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Button, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, Pagination, Tooltip, Snackbar, Alert,
-} from "@mui/material";
-import { Delete, ModeEdit } from "@mui/icons-material";
-
+import React, { useState, useEffect } from "react";
+import { Box, Button, Typography, Stack, Snackbar, Alert } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
+import CommonTransitionList from "../../components/Transition/CommonTransitionList";
+import CommonTransitionForm from "../../components/Transition/CommonTransitionForm";
 import {
   getReturnMaterials,
+  getReturnMaterialById,
   createReturnMaterial,
   updateReturnMaterial,
-  deleteReturnMaterial
+  deleteReturnMaterial,
+  confirmReturnMaterial,
+  cancelReturnMaterial,
 } from "../../api/ReturnMaterial.api";
-import { useDispatch } from 'react-redux';
-import { createNotification } from '../../features/notificationSlice';
+import { getItems } from "../../api/Item.api";
+import { getwarehouses } from "../../api/warehouse.api";
+import { getSubsidiaries } from "../../api/Subsidiaries.api";
+import { getCities } from "../../api/Cities.api";
 
-export default function ReturnMaterial() {
-    const dispatch = useDispatch();
-  const [data, setData] = useState(
-    () => {
-      const saved = localStorage.getItem("returnMaterials");
-      return saved ? JSON.parse(saved) : [];
-    }
-  );
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [page, setPage] = useState(1);
-  const rowsPerPage = 5;
+const ReturnMaterial = () => {
+  const [view, setView] = useState("list");
+  const [data, setData] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [mode, setMode] = useState("create");
+  const [snack, setSnack] = useState({ open: false, message: "", severity: "success" });
 
-  const [form, setForm] = useState({
-    returnNo: "",
-    date: "",
-    itemName: "",
-    quantity: "",
-    returnedFrom: "",
-    warehouse: "",
-    reason: "",
+  const [masterData, setMasterData] = useState({
+    items: [],
+    stores: [],
+    subsidiaries: [],
+    cities: [],
+    workCategories: ["Category A", "Category B", "Category C"],
+    materialStatuses: ["Good", "Damaged", "Refurbished"],
+    uoms: ["Nos", "Kg", "Mtr", "Set"],
   });
 
-  const [errors, setErrors] = useState({});
-  const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
-  // -------------------- FETCH DATA --------------------
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
+      const [mainRes, itemsRes, warehouseRes, subsidiaryRes, cityRes] = await Promise.all([
+        getReturnMaterials(),
+        getItems(),
+        getwarehouses(),
+        getSubsidiaries(),
+        getCities(),
+      ]);
+
+      setData(mainRes.data?.data || []);
+      setMasterData(prev => ({
+        ...prev,
+        items: itemsRes.data?.data || [],
+        stores: (warehouseRes.data?.data || []).map(w => w.warehouseName || w.name),
+        subsidiaries: (subsidiaryRes.data?.data || []).map(s => s.name),
+        cities: (cityRes.data?.data || []).map(c => c.cityName || c.name),
+      }));
+    } catch (e) {
+      showSnack("Failed to fetch data", "error");
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const showSnack = (message, severity = "success") => {
+    setSnack({ open: true, message, severity });
+  };
+
+  const handleAction = async (action, row) => {
+    if (action === "view" || action === "edit") {
       try {
-        const response = await getReturnMaterials();
-        if (response.data.success) setData(response.data.data);
-      } catch (error) {
-        console.error("Failed to fetch return materials:", error.response?.data || error.message);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // -------------------- PAGINATION --------------------
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return data.slice(start, start + rowsPerPage);
-  }, [data, page]);
-
-  const pageCount = Math.ceil(data.length / rowsPerPage) || 1;
-
-  // -------------------- VALIDATION --------------------
-  const validate = () => {
-    let temp = {};
-    if (!form.returnNo) temp.returnNo = "Return No required";
-    if (!form.date) temp.date = "Date required";
-    if (!form.itemName) temp.itemName = "Item required";
-    if (!form.quantity || isNaN(form.quantity)) temp.quantity = "Valid quantity required";
-    if (!form.returnedFrom) temp.returnedFrom = "Returned from required";
-    if (!form.warehouse) temp.warehouse = "Warehouse required";
-
-    setErrors(temp);
-    return Object.keys(temp).length === 0;
-  };
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" });
-  };
-
-  // -------------------- SAVE / UPDATE --------------------
-  const handleSave = async () => {
-    if (!validate()) return;
-
-    try {
-      if (editId) {
-        const response = await updateReturnMaterial(editId, form);
-        if (response.data.success) {
-          setData(prev => prev.map(d => (d.id === editId ? response.data.data : d)));
-        }
-      } else {
-        const response = await createReturnMaterial(form);
-        if (response.data.success) {
-          setData(prev => [...prev, response.data.data]);
-          dispatch(createNotification({
-            severity: "success",
-            message: "Return Material created successfully",
-            path: 'transition/ReturnMaterial',
-            time: new Date().toISOString(),
-            }));  
-            setSnack({ open: true, severity: 'success', message: 'Return Material added' });
-        }
-      }
-
-      setOpen(false);
-      setEditId(null);
-      setForm({
-        returnNo: "",
-        date: "",
-        itemName: "",
-        quantity: "",
-        returnedFrom: "",
-        warehouse: "",
-        reason: "",
-      });
-    } catch (error) {
-      console.error("Failed to save return material:", error.response?.data || error.message);
+        const res = await getReturnMaterialById(row.id);
+        setSelectedItem(res.data.data);
+        setMode(action);
+        setView("form");
+      } catch (e) { showSnack("Failed to fetch details", "error"); }
+    } else if (action === "confirm") {
+      try {
+        await confirmReturnMaterial(row.id);
+        showSnack("Confirmed successfully");
+        fetchData();
+      } catch (e) { showSnack("Failed to confirm", "error"); }
+    } else if (action === "cancel") {
+      try {
+        await cancelReturnMaterial(row.id);
+        showSnack("Cancelled successfully");
+        fetchData();
+      } catch (e) { showSnack("Failed to cancel", "error"); }
+    } else if (action === "delete") {
+      try {
+        await deleteReturnMaterial(row.id);
+        showSnack("Deleted successfully");
+        fetchData();
+      } catch (e) { showSnack("Failed to delete", "error"); }
     }
   };
 
-  const handleEdit = (row) => {
-    setForm(row);
-    setEditId(row.id);
-    setOpen(true);
-  };
-
-  const handleDelete = async (id) => {
+  const handleSave = async (formData) => {
     try {
-      const response = await deleteReturnMaterial(id);
-      if (response.data.success) {
-        setData(prev => prev.filter(d => d.id !== id));
-      }
-    } catch (error) {
-      console.error("Failed to delete return material:", error.response?.data || error.message);
-    }
+      if (mode === "create") { await createReturnMaterial(formData); showSnack("Created successfully"); }
+      else { await updateReturnMaterial(formData.id, formData); showSnack("Updated successfully"); }
+      setView("list");
+      fetchData();
+    } catch (e) { showSnack(e.response?.data?.message || "Failed to save", "error"); }
   };
 
-  // -------------------- RENDER --------------------
+  const columns = [
+    { field: "returnNo", label: "Return No" },
+    { field: "returnFrom", label: "Return From" },
+    { field: "date", label: "Date" },
+    { field: "returnType", label: "Return Type" },
+    { field: "grandTotal", label: "Grand Total" },
+  ];
+
+  const headerFields = [
+    { name: "returnNo", label: "Return Number", required: true },
+    { name: "returnFrom", label: "Return From" },
+    { name: "returnType", label: "Return Type" },
+    { name: "date", label: "Date", type: "datetime-local", required: true },
+    { 
+      name: "city", 
+      label: "City", 
+      required: true, 
+      select: true, 
+      options: masterData.cities.map(c => ({ label: c, value: c })) 
+    },
+    { name: "site", label: "Site" },
+    { 
+      name: "store", 
+      label: "Store", 
+      select: true, 
+      options: masterData.stores.map(s => ({ label: s, value: s })) 
+    },
+    { 
+      name: "subsidiary", 
+      label: "Subsidiary", 
+      required: true, 
+      select: true, 
+      options: masterData.subsidiaries.map(s => ({ label: s, value: s })) 
+    },
+    { name: "remarks", label: "Remarks" },
+  ];
+
+  if (view === "form") {
+    return (
+      <CommonTransitionForm
+        title={mode === "create" ? "Create Return Material Entry" : "Return Material Entry"}
+        headerFields={headerFields}
+        initialData={selectedItem}
+        mode={mode}
+        onSave={handleSave}
+        onCancel={() => setView("list")}
+        masterData={masterData}
+      />
+    );
+  }
+
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>Return Material</Typography>
-        <Button variant="contained" sx={{ mb: 2 }} onClick={() => setOpen(true)}>Add Return Material</Button>
-      </Box>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Sr. No.</TableCell>
-              <TableCell>Return No</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Item</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Returned From</TableCell>
-              <TableCell>Warehouse</TableCell>
-              <TableCell>Reason</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedData.map((row, index) => (
-              <TableRow key={row.id}>
-                <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
-                <TableCell>{row.returnNo}</TableCell>
-                <TableCell>{row.date}</TableCell>
-                <TableCell>{row.itemName}</TableCell>
-                <TableCell>{row.quantity}</TableCell>
-                <TableCell>{row.returnedFrom}</TableCell>
-                <TableCell>{row.warehouse}</TableCell>
-                <TableCell>{row.reason || "-"}</TableCell>
-                <TableCell>
-                  <Tooltip title="Edit">
-                    <IconButton onClick={() => handleEdit(row)}><ModeEdit /></IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete">
-                    <IconButton color="error" onClick={() => handleDelete(row.id)}><Delete /></IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-        <Pagination count={pageCount} page={page} onChange={(e, v) => setPage(v)} />
-      </Box>
-
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
-        <DialogTitle>{editId ? "Edit Return Material" : "Add Return Material"}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-            <TextField label="Return No" name="returnNo" value={form.returnNo} onChange={handleChange} error={!!errors.returnNo} helperText={errors.returnNo} />
-            <TextField type="date" label="Return Date" name="date" value={form.date} onChange={handleChange} InputLabelProps={{ shrink: true }} error={!!errors.date} helperText={errors.date} />
-            <TextField label="Item Name" name="itemName" value={form.itemName} onChange={handleChange} error={!!errors.itemName} helperText={errors.itemName} />
-            <TextField label="Quantity" name="quantity" value={form.quantity} onChange={handleChange} error={!!errors.quantity} helperText={errors.quantity} />
-            <TextField label="Returned From" name="returnedFrom" value={form.returnedFrom} onChange={handleChange} error={!!errors.returnedFrom} helperText={errors.returnedFrom} />
-            <TextField label="Warehouse" name="warehouse" value={form.warehouse} onChange={handleChange} error={!!errors.warehouse} helperText={errors.warehouse} />
-            <TextField label="Reason" name="reason" value={form.reason} onChange={handleChange} multiline rows={2} />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>Save</Button>
-        </DialogActions>
-      </Dialog>
-      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack({ ...snack, open: false })}>
-        <Alert severity={snack.severity} sx={{ width: '100%' }}>{snack.message}</Alert>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold">Return Materials</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => {
+            setMode("create");
+            setSelectedItem({ date: new Date().toISOString().slice(0, 16), status: "Draft" });
+            setView("form");
+          }}
+        >
+          Create New
+        </Button>
+      </Stack>
+      <CommonTransitionList data={data} columns={columns} onAction={handleAction} />
+      <Snackbar open={snack.open} autoHideDuration={6000} onClose={() => setSnack({ ...snack, open: false })}>
+        <Alert severity={snack.severity} sx={{ width: "100%" }}>{snack.message}</Alert>
       </Snackbar>
     </Box>
   );
-}
+};
 
+export default ReturnMaterial;

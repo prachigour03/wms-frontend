@@ -1,17 +1,17 @@
 import formApiClient from "../services/formApiClient";
 
-// GET all return materials
-export const getReturnMaterials = () =>
-  formApiClient.get("/api/forms/transition/return-material");
+const BASE_URL = "/api/forms/transition/return-material";
 
-// CREATE a return material
-export const createReturnMaterial = (data) =>
-  formApiClient.post("/api/forms/transition/return-material", data);
+export const getReturnMaterials = () => formApiClient.get(BASE_URL);
 
-// UPDATE a return material
-export const updateReturnMaterial = (id, data) =>
-  formApiClient.put(`/api/forms/transition/return-material/${id}`, data);
+export const getReturnMaterialById = (id) => formApiClient.get(`${BASE_URL}/${id}`);
 
-// DELETE a return material
-export const deleteReturnMaterial = (id) =>
-  formApiClient.delete(`/api/forms/transition/return-material/${id}`);
+export const createReturnMaterial = (data) => formApiClient.post(BASE_URL, data);
+
+export const updateReturnMaterial = (id, data) => formApiClient.put(`${BASE_URL}/${id}`, data);
+
+export const deleteReturnMaterial = (id) => formApiClient.delete(`${BASE_URL}/${id}`);
+
+export const confirmReturnMaterial = (id) => formApiClient.patch(`${BASE_URL}/${id}/confirm`);
+
+export const cancelReturnMaterial = (id) => formApiClient.patch(`${BASE_URL}/${id}/cancel`);

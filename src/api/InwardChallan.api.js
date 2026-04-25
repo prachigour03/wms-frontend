@@ -1,17 +1,17 @@
 import formApiClient from "../services/formApiClient";
 
-// GET all inward challans
-export const getInwardChallans = () =>
-  formApiClient.get("/api/forms/transition/inward-challan");
+const BASE_URL = "/api/forms/transition/inward-challan";
 
-// CREATE inward challan
-export const createInwardChallan = (data) =>
-  formApiClient.post("/api/forms/transition/inward-challan", data);
+export const getInwardChallans = () => formApiClient.get(BASE_URL);
 
-// UPDATE inward challan
-export const updateInwardChallan = (id, data) =>
-  formApiClient.put(`/api/forms/transition/inward-challan/${id}`, data);
+export const getInwardChallanById = (id) => formApiClient.get(`${BASE_URL}/${id}`);
 
-// DELETE inward challan
-export const deleteInwardChallan = (id) =>
-  formApiClient.delete(`/api/forms/transition/inward-challan/${id}`);
+export const createInwardChallan = (data) => formApiClient.post(BASE_URL, data);
+
+export const updateInwardChallan = (id, data) => formApiClient.put(`${BASE_URL}/${id}`, data);
+
+export const deleteInwardChallan = (id) => formApiClient.delete(`${BASE_URL}/${id}`);
+
+export const confirmInwardChallan = (id) => formApiClient.patch(`${BASE_URL}/${id}/confirm`);
+
+export const cancelInwardChallan = (id) => formApiClient.patch(`${BASE_URL}/${id}/cancel`);

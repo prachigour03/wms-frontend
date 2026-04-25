@@ -63,6 +63,7 @@ export const SIDEBAR_CONFIG = [
       { text: "Employees", path: "/Employees/EmployeeManagement", icon: PersonAdd, permission: "employees:read" },
       { text: "Items", path: "/master/items", icon: Inventory2, permission: "items:read" },
       { text: "Item Group", path: "/master/ItemsGroups", icon: GroupWork, permission: "item_groups:read" },
+      { text: "Stores", path: "/master/Stores", icon: HomeWork, permission: "items:read" },
       { text: "Vendors", path: "/master/Vendors", icon: People, permission: "vendors:read" },
       { text: "Warehouses", path: "/master/Warehouses", icon: HomeWork, permission: "warehouses:read" },
     ],

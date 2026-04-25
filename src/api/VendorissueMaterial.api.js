@@ -1,17 +1,17 @@
 import formApiClient from "../services/formApiClient";
 
-// GET all vendor issues
-export const getVendorIssueMaterials = () =>
-  formApiClient.get("/api/forms/transition/vendor-issue-material");
+const BASE_URL = "/api/forms/transition/vendor-issue-material";
 
-// CREATE a vendor issue
-export const createVendorIssueMaterial = (data) =>
-  formApiClient.post("/api/forms/transition/vendor-issue-material", data);
+export const getVendorIssueMaterials = () => formApiClient.get(BASE_URL);
 
-// UPDATE a vendor issue
-export const updateVendorIssueMaterial = (id, data) =>
-  formApiClient.put(`/api/forms/transition/vendor-issue-material/${id}`, data);
+export const getVendorIssueMaterialById = (id) => formApiClient.get(`${BASE_URL}/${id}`);
 
-// DELETE a vendor issue
-export const deleteVendorIssueMaterial = (id) =>
-  formApiClient.delete(`/api/forms/transition/vendor-issue-material/${id}`);
+export const createVendorIssueMaterial = (data) => formApiClient.post(BASE_URL, data);
+
+export const updateVendorIssueMaterial = (id, data) => formApiClient.put(`${BASE_URL}/${id}`, data);
+
+export const deleteVendorIssueMaterial = (id) => formApiClient.delete(`${BASE_URL}/${id}`);
+
+export const confirmVendorIssueMaterial = (id) => formApiClient.patch(`${BASE_URL}/${id}/confirm`);
+
+export const cancelVendorIssueMaterial = (id) => formApiClient.patch(`${BASE_URL}/${id}/cancel`);
