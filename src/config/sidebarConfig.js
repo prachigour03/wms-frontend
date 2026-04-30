@@ -70,23 +70,23 @@ export const SIDEBAR_CONFIG = [
   },
 
   {
-    text: "Transition",
+    text: "Transaction",
     icon: ReceiptLongSharp,
     children: [
-      { text: "Inventory Count", path: "/transition/InventoryCount", icon: Inventory2, permission: "inventory_counts:read" },
+      { text: "Inventory", path: "/transition/InventoryCount", icon: Inventory2, permission: "inventory_counts:read" },
       { text: "Inward Challan", path: "/transition/InwardChallan", icon: ReceiptLong, permission: "inward_challans:read" },
+      { text: "Vendor Issue Material", path: "/transition/VendorissueMaterial", icon: LocalShipping, permission: "vendor_issue_materials:read" },
       { text: "Material Consumption", path: "/transition/MaterialConsumption", icon: ShoppingCart, permission: "material_consumptions:read" },
       { text: "Return Material", path: "/transition/ReturnMaterial", icon: KeyboardReturn, permission: "return_materials:read" },
-      { text: "Vendor Bill", path: "/transition/VendorBill", icon: ReceiptLong, permission: "vendor_bills:read" },
-      { text: "Vendor Issue Material", path: "/transition/VendorissueMaterial", icon: LocalShipping, permission: "vendor_issue_materials:read" },
+      //{ text: "Vendor Bill", path: "/transition/VendorBill", icon: ReceiptLong, permission: "vendor_bills:read" },
     ],
   },
 
-  {
-    text: "O2C",
-    icon: SellSharp,
-    children: [
-      { text: "Order Booking", path: "/O2C/OrderBooking", icon: ShoppingCartSharp, permission: "order_bookings:read" },
-    ],
-  },
+  // {
+  //   text: "O2C",
+  //   icon: SellSharp,
+  //   children: [
+  //     { text: "Order Booking", path: "/O2C/OrderBooking", icon: ShoppingCartSharp, permission: "order_bookings:read" },
+  //   ],
+  // },
 ];

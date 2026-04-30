@@ -18,6 +18,10 @@ import { getSubsidiaries } from "../../api/Subsidiaries.api";
 import { getCities } from "../../api/Cities.api";
 import { getDepartments } from "../../api/Departments.api";
 
+import { getVendors } from "../../api/vendor.api";
+import { getAllEmployees } from "../../api/Employees.api";
+import { getVendorIssueMaterials } from "../../api/VendorissueMaterial.api";
+
 const MaterialConsumption = () => {
   const [view, setView] = useState("list");
   const [data, setData] = useState([]);
@@ -30,21 +34,26 @@ const MaterialConsumption = () => {
     stores: [],
     subsidiaries: [],
     cities: [],
-    departments: [],
-    workCategories: ["Category A", "Category B", "Category C"],
+    vendors: [],
+    employees: [],
+    issueData: [], // To store vendor-issue-material data
+    workCategories: ["Cable", "Hardware", "Software"],
     materialStatuses: ["Good", "Damaged", "Refurbished"],
     uoms: ["Nos", "Kg", "Mtr", "Set"],
+    serviceTypes: ["Installation", "Maintenance", "Repair"],
   });
 
   const fetchData = async () => {
     try {
-      const [mainRes, itemsRes, warehouseRes, subsidiaryRes, cityRes, deptRes] = await Promise.all([
+      const [mainRes, itemsRes, warehouseRes, subsidiaryRes, cityRes, vendorRes, empRes, issueRes] = await Promise.all([
         getMaterialConsumptions(),
         getItems(),
         getwarehouses(),
         getSubsidiaries(),
         getCities(),
-        getDepartments(),
+        getVendors(),
+        getAllEmployees(),
+        getVendorIssueMaterials(),
       ]);
 
       setData(mainRes.data?.data || []);
@@ -54,7 +63,10 @@ const MaterialConsumption = () => {
         stores: (warehouseRes.data?.data || []).map(w => w.warehouseName || w.name),
         subsidiaries: (subsidiaryRes.data?.data || []).map(s => s.name),
         cities: (cityRes.data?.data || []).map(c => c.cityName || c.name),
-        departments: (deptRes.data?.data || []).map(d => d.name || d.departmentName),
+        vendors: (vendorRes.data?.data || []).map(v => v.vendorName || v.name),
+        employees: (empRes.data?.data || []).map(e => e.employeeName || e.name || `${e.firstName || ""} ${e.lastName || ""}`.trim()),
+        issueData: issueRes.data?.data || [],
+        consumptionData: (mainRes.data?.data || []).filter(c => c.status === "Confirmed"),
       }));
     } catch (e) {
       showSnack("Failed to fetch data", "error");
@@ -107,22 +119,18 @@ const MaterialConsumption = () => {
 
   const columns = [
     { field: "consumptionNo", label: "Consumption No" },
-    { field: "department", label: "Department" },
+    // { field: "consumedBy", label: "Vendor/Employee" },
     { field: "date", label: "Date" },
-    { field: "consumedBy", label: "Consumed By" },
+    { field: "subsidiary", label: "Subsidiary" },
+    { field: "city", label: "City" },
+    { field: "site", label: "Site" },
     { field: "grandTotal", label: "Grand Total" },
   ];
 
   const headerFields = [
     { name: "consumptionNo", label: "Consumption Number", required: true },
-    { 
-      name: "department", 
-      label: "Department",
-      select: true,
-      options: masterData.departments.map(d => ({ label: d, value: d }))
-    },
-    { name: "consumedBy", label: "Consumed By" },
-    { name: "date", label: "Date", type: "datetime-local", required: true },
+    //{ name: "workOrderNo", label: "Work Orders", select: true },
+    { name: "consumedBy", label: "Issued To", required: true, select: true },
     { 
       name: "city", 
       label: "City", 
@@ -132,28 +140,24 @@ const MaterialConsumption = () => {
     },
     { name: "site", label: "Site" },
     { 
-      name: "store", 
-      label: "Store", 
-      select: true, 
-      options: masterData.stores.map(s => ({ label: s, value: s })) 
-    },
-    { 
       name: "subsidiary", 
       label: "Subsidiary", 
       required: true, 
       select: true, 
       options: masterData.subsidiaries.map(s => ({ label: s, value: s })) 
     },
+    { name: "date", label: "Consumption Date & Time", type: "datetime-local", required: true },
     { name: "remarks", label: "Remarks" },
   ];
 
   if (view === "form") {
     return (
       <CommonTransitionForm
-        title={mode === "create" ? "Create Material Consumption Entry" : "Material Consumption Entry"}
+        title={mode === "create" ? "Create Material Consumption" : "Material Consumption Entry"}
         headerFields={headerFields}
         initialData={selectedItem}
         mode={mode}
+        moduleType="consumption"
         onSave={handleSave}
         onCancel={() => setView("list")}
         masterData={masterData}
@@ -170,7 +174,11 @@ const MaterialConsumption = () => {
           startIcon={<AddIcon />}
           onClick={() => {
             setMode("create");
-            setSelectedItem({ date: new Date().toISOString().slice(0, 16), status: "Draft" });
+            setSelectedItem({ 
+              date: new Date().toISOString().slice(0, 16), 
+              status: "Draft", 
+              type: "Vendor" 
+            });
             setView("form");
           }}
         >

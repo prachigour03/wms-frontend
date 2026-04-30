@@ -133,6 +133,9 @@ const InwardChallan = () => {
     { field: "customer", label: "Customer" },
     { field: "date", label: "Date" },
     { field: "workOrderNo", label: "Work Order No" },
+    { field: "subsidiary", label: "Subsidiary" },
+    { field: "city", label: "City" },
+    { field: "site", label: "Site" },
     { field: "grandTotal", label: "Grand Total" },
   ];
 

@@ -268,7 +268,7 @@ const DashboardPage = () => {
 
   const masonryItems = [
     {
-      title: "Recent Orders",
+      title: "Inventry Value",
       icon: <ShoppingCart sx={{ color: "#ff9800" }} />,
       color: "#ff9800",
       height: 400,
@@ -283,13 +283,13 @@ const DashboardPage = () => {
           {recentOrders.slice(0, 6).map((order, index) => (
             <ListItem key={order.id || index} sx={{ px: 0, py: 1 }}>
               <ListItemText
-                primary={`Order ${order.tranditionId} - ₹${order.finalRate}`}
+                primary={`Inventory ${order.tranditionId} - ₹${order.finalRate}`}
                 primaryTypographyProps={{ variant: "body2", fontWeight: 500 }}
               />
               <Chip label="Paid" size="small" color="success" />
             </ListItem>
           ))}
-          <Button size="medium" onClick={() => navigate("/O2C/OrderBooking")}>
+          <Button size="medium" onClick={() => navigate("/Transition/InventoryCount")}>
             View All
           </Button>
         </List>

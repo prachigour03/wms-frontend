@@ -40,6 +40,7 @@ const CommonTransitionList = ({ data, onAction, columns }) => {
       case "Draft": return "default";
       case "Confirmed": return "success";
       case "Cancelled": return "error";
+      case "Issued": return "info";
       default: return "default";
     }
   };
@@ -60,7 +61,11 @@ const CommonTransitionList = ({ data, onAction, columns }) => {
           {data.map((row) => (
             <TableRow key={row.id}>
               {columns.map((col) => (
-                <TableCell key={col.field}>{row[col.field]}</TableCell>
+                <TableCell key={col.field}>
+                  {col.field.toLowerCase().includes("date") && row[col.field]
+                    ? new Date(row[col.field]).toLocaleString()
+                    : row[col.field]}
+                </TableCell>
               ))}
               <TableCell>
                 <Chip label={row.status} color={getStatusColor(row.status)} size="small" />

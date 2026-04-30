@@ -3,19 +3,15 @@ import { Box, Button, Typography, Stack, Snackbar, Alert } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 import CommonTransitionList from "../../components/Transition/CommonTransitionList";
 import CommonTransitionForm from "../../components/Transition/CommonTransitionForm";
-import {
-  getReturnMaterials,
-  getReturnMaterialById,
-  createReturnMaterial,
-  updateReturnMaterial,
-  deleteReturnMaterial,
-  confirmReturnMaterial,
-  cancelReturnMaterial,
-} from "../../api/ReturnMaterial.api";
+import { getReturnMaterials, getReturnMaterialById, createReturnMaterial, updateReturnMaterial, deleteReturnMaterial, confirmReturnMaterial, cancelReturnMaterial } from "../../api/ReturnMaterial.api";
 import { getItems } from "../../api/Item.api";
-import { getwarehouses } from "../../api/warehouse.api";
+import { getStores } from "../../api/Store.api";
 import { getSubsidiaries } from "../../api/Subsidiaries.api";
 import { getCities } from "../../api/Cities.api";
+import { getVendors } from "../../api/vendor.api";
+import { getAllEmployees } from "../../api/Employees.api";
+import { getVendorIssueMaterials } from "../../api/VendorissueMaterial.api";
+import { getMaterialConsumptions } from "../../api/MaterialConsumption.api";
 
 const ReturnMaterial = () => {
   const [view, setView] = useState("list");
@@ -29,28 +25,41 @@ const ReturnMaterial = () => {
     stores: [],
     subsidiaries: [],
     cities: [],
-    workCategories: ["Category A", "Category B", "Category C"],
+    vendors: [],
+    employees: [],
+    issueData: [],
+    consumptionData: [],
+    workCategories: ["Cable", "Hardware", "Software"],
     materialStatuses: ["Good", "Damaged", "Refurbished"],
     uoms: ["Nos", "Kg", "Mtr", "Set"],
   });
 
   const fetchData = async () => {
     try {
-      const [mainRes, itemsRes, warehouseRes, subsidiaryRes, cityRes] = await Promise.all([
+      const [mainRes, itemsRes, storeRes, subsidiaryRes, cityRes, vendorRes, empRes, issueRes, consumptionRes] = await Promise.all([
         getReturnMaterials(),
         getItems(),
-        getwarehouses(),
+        getStores(),
         getSubsidiaries(),
         getCities(),
+        getVendors(),
+        getAllEmployees(),
+        getVendorIssueMaterials(),
+        getMaterialConsumptions(),
       ]);
 
       setData(mainRes.data?.data || []);
       setMasterData(prev => ({
         ...prev,
         items: itemsRes.data?.data || [],
-        stores: (warehouseRes.data?.data || []).map(w => w.warehouseName || w.name),
+        stores: (storeRes.data?.data || []).map(s => s.storeName),
         subsidiaries: (subsidiaryRes.data?.data || []).map(s => s.name),
         cities: (cityRes.data?.data || []).map(c => c.cityName || c.name),
+        vendors: (vendorRes.data?.data || []).map(v => v.vendorName || v.name),
+        employees: (empRes.data?.data || []).map(e => e.employeeName || e.name || `${e.firstName || ""} ${e.lastName || ""}`.trim()),
+        issueData: issueRes.data?.data || [],
+        consumptionData: (consumptionRes.data?.data || []).filter(c => c.status === "Confirmed"),
+        returnData: (mainRes.data?.data || []).filter(r => r.status === "Confirmed"),
       }));
     } catch (e) {
       showSnack("Failed to fetch data", "error");
@@ -111,7 +120,7 @@ const ReturnMaterial = () => {
 
   const headerFields = [
     { name: "returnNo", label: "Return Number", required: true },
-    { name: "returnFrom", label: "Return From" },
+    { name: "returnFrom", label: "Return From", required: true, select: true },
     { name: "returnType", label: "Return Type" },
     { name: "date", label: "Date", type: "datetime-local", required: true },
     { 
@@ -145,6 +154,7 @@ const ReturnMaterial = () => {
         headerFields={headerFields}
         initialData={selectedItem}
         mode={mode}
+        moduleType="return"
         onSave={handleSave}
         onCancel={() => setView("list")}
         masterData={masterData}
@@ -161,7 +171,11 @@ const ReturnMaterial = () => {
           startIcon={<AddIcon />}
           onClick={() => {
             setMode("create");
-            setSelectedItem({ date: new Date().toISOString().slice(0, 16), status: "Draft" });
+            setSelectedItem({ 
+              date: new Date().toISOString().slice(0, 16), 
+              status: "Draft",
+              type: "Vendor" 
+            });
             setView("form");
           }}
         >
@@ -177,3 +191,4 @@ const ReturnMaterial = () => {
 };
 
 export default ReturnMaterial;
+

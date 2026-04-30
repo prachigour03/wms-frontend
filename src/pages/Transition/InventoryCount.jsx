@@ -1,372 +1,396 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
+  Chip,
+  CircularProgress,
+  MenuItem,
   Paper,
-  Typography,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Button,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
+  Typography,
   Pagination,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Snackbar,
-  Alert,
-  Chip,
 } from "@mui/material";
-import { Delete, ModeEdit } from "@mui/icons-material";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
+import { getInventoryCounts } from "../../api/InventoryCount.api";
 
-import {
-  getInventoryCounts,
-  createInventoryCount,
-  updateInventoryCount,
-  deleteInventoryCount,
-} from "../../api/InventoryCount.api";
-import { getwarehouses } from "../../api/warehouse.api";
-import { getItems } from "../../api/Item.api";
-import { useDispatch } from "react-redux";
-import { createNotification} from "../../features/notificationSlice";
+const ROWS_PER_PAGE = 10;
 
-/* ---------------- VALIDATION ---------------- */
-const validationSchema = Yup.object({
-  itemCode: Yup.string().required("Item Code is required"),
-  itemName: Yup.string().required("Item Name is required"),
-  warehouse: Yup.string().required("Warehouse is required"),
-  systemQty: Yup.number()
-    .typeError("System Qty must be a number")
-    .required("Required")
-    .min(0, "Must be 0 or more"),
-  countedQty: Yup.number()
-    .typeError("Counted Qty must be a number")
-    .required("Required")
-    .min(0, "Must be 0 or more"),
-  countDate: Yup.date().required("Count Date is required"),
-});
+const DEFAULT_SUMMARY = {
+  inventoryCount: 0,
+  itemsInInventory: 0,
+  totalInventoryQuantity: 0,
+  itemsBelowThreshold: 0,
+  itemsOutOfStock: 0,
+  lowStockThreshold: 10,
+};
 
-/* ---------------- COMPONENT ---------------- */
+const STATUS_OPTIONS = ["all", "In Stock", "Low Stock", "Out of Stock"];
+
+const formatNumber = (value) => {
+  const number = Number(value) || 0;
+  return number.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatInventoryAge = (days) => {
+  const safeDays = Number(days) || 0;
+  if (safeDays <= 0) return "Today";
+  return safeDays === 1 ? "1 day" : `${safeDays} days`;
+};
+
+const getStatusColor = (status) => {
+  if (status === "In Stock") return "success";
+  if (status === "Low Stock") return "warning";
+  return "error";
+};
+
+const uniqueOptions = (rows, field) => {
+  const values = new Set();
+  rows.forEach((row) => {
+    const val = String(row?.[field] || "").trim();
+    if (val) values.add(val);
+  });
+  return ["all", ...Array.from(values).sort((a, b) => a.localeCompare(b))];
+};
+
 export default function InventoryCount() {
-  const dispatch = useDispatch();
-
-  const [data, setData] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
-  const [items, setItems] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [editValues, setEditValues] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [summary, setSummary] = useState(DEFAULT_SUMMARY);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("countDate");
-  const [sortOrder, setSortOrder] = useState("desc");
 
-  const rowsPerPage = 5;
-
-  /* ---------------- NORMALIZE FORM VALUES ---------------- */
-  const normalizeValues = (data = {}) => ({
-    itemCode: data.itemCode || "",
-    itemName: data.itemName || "",
-    warehouse: data.warehouse || "",
-    systemQty: data.systemQty || "",
-    countedQty: data.countedQty || "",
-    countDate: data.countDate || "",
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "all",
+    workCategory: "all",
+    store: "all",
+    city: "all",
+    customer: "all",
+    materialStatus: "all",
   });
 
-  /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInventory = async () => {
       try {
-        const [inv, wh, itemsRes] = await Promise.all([
-          getInventoryCounts(),
-          getwarehouses(),
-          getItems(),
-        ]);
-        setData(Array.isArray(inv?.data?.data) ? inv.data.data : []);
-        setWarehouses(Array.isArray(wh?.data?.data) ? wh.data.data : []);
-        setItems(Array.isArray(itemsRes?.data?.data) ? itemsRes.data.data : []);
+        setLoading(true);
+        const response = await getInventoryCounts();
+        const payloadRows = Array.isArray(response?.data?.data) ? response.data.data : [];
+        setRows(payloadRows);
+        setSummary({
+          ...DEFAULT_SUMMARY,
+          ...(response?.data?.summary || {}),
+        });
       } catch (error) {
+        setRows([]);
+        setSummary(DEFAULT_SUMMARY);
         setSnack({
           open: true,
           severity: "error",
-          message: error.response?.data?.message || "Failed to load data",
+          message: error?.response?.data?.message || "Failed to load inventory data",
         });
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
+
+    fetchInventory();
   }, []);
 
-  const hasItems = items.length > 0;
+  const filterOptions = useMemo(
+    () => ({
+      workCategory: uniqueOptions(rows, "workCategory"),
+      store: uniqueOptions(rows, "store"),
+      city: uniqueOptions(rows, "city"),
+      customer: uniqueOptions(rows, "customer"),
+      materialStatus: uniqueOptions(rows, "materialStatus"),
+    }),
+    [rows]
+  );
 
-  const getVariance = (row) =>
-    (Number(row.countedQty) || 0) - (Number(row.systemQty) || 0);
-  const getVarianceStatus = (variance) =>
-    variance === 0 ? "Matched" : variance > 0 ? "Excess" : "Short";
-  const getResultColor = (result) => {
-    if (result === "Matched") return "success";
-    if (result === "Excess") return "warning";
-    return "error";
-  };
+  const filteredRows = useMemo(() => {
+    const searchText = filters.search.trim().toLowerCase();
+
+    return rows.filter((row) => {
+      if (filters.status !== "all" && row.status !== filters.status) return false;
+      if (filters.workCategory !== "all" && row.workCategory !== filters.workCategory) return false;
+      if (filters.store !== "all" && row.store !== filters.store) return false;
+      if (filters.city !== "all" && row.city !== filters.city) return false;
+      if (filters.customer !== "all" && row.customer !== filters.customer) return false;
+      if (filters.materialStatus !== "all" && row.materialStatus !== filters.materialStatus) return false;
+
+      if (!searchText) return true;
+
+      const haystack = [
+        row.itemCode,
+        row.itemName,
+        row.customer,
+        row.workOrderNo,
+      ]
+        .map((val) => String(val || "").toLowerCase())
+        .join(" ");
+
+      return haystack.includes(searchText);
+    });
+  }, [filters, rows]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, sortBy, sortOrder]);
+  }, [filters]);
 
-  const summaryCounts = useMemo(() => {
-    const counts = { total: data.length, matched: 0, excess: 0, short: 0 };
-    data.forEach((row) => {
-      const result = getVarianceStatus(getVariance(row));
-      if (result === "Matched") counts.matched += 1;
-      if (result === "Excess") counts.excess += 1;
-      if (result === "Short") counts.short += 1;
-    });
-    return counts;
-  }, [data]);
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * ROWS_PER_PAGE;
+    return filteredRows.slice(start, start + ROWS_PER_PAGE);
+  }, [filteredRows, page]);
 
-  const filteredData = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const filtered = data.filter((row) => {
-      if (!term) return true;
-      const values = [
-        row.itemCode,
-        row.itemName,
-        row.warehouse,
-        row.countDate,
-      ]
-        .filter(Boolean)
-        .map((v) => String(v).toLowerCase());
-      return values.some((v) => v.includes(term));
-    });
-
-    const getSortValue = (row) => {
-      if (sortBy === "countDate") {
-        const dt = row.countDate ? new Date(row.countDate) : null;
-        return dt && !Number.isNaN(dt.getTime()) ? dt.getTime() : 0;
-      }
-      if (sortBy === "itemName") return (row.itemName || "").toLowerCase();
-      if (sortBy === "variance") return getVariance(row);
-      if (sortBy === "result")
-        return getVarianceStatus(getVariance(row));
-      return 0;
-    };
-
-    filtered.sort((a, b) => {
-      const aVal = getSortValue(a);
-      const bVal = getSortValue(b);
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [data, search, sortBy, sortOrder]);
-
-  /* ---------------- PAGINATION ---------------- */
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredData.slice(start, start + rowsPerPage);
-  }, [filteredData, page]);
-  const pageCount = Math.ceil(filteredData.length / rowsPerPage) || 1;
-
-  /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = async (values, { resetForm }) => {
-    try {
-      if (editId) {
-        const res = await updateInventoryCount(editId, values);
-        setData((prev) => prev.map((d) => (d.id === editId ? res.data.data : d)));
-        setSnack({ open: true, severity: "success", message: "Inventory Count updated successfully" });
-      } else {
-        const res = await createInventoryCount(values);
-        setData((prev) => [...prev, res.data.data]);
-        setSnack({ open: true, severity: "success", message: "Inventory Count added successfully" });
-      }
-
-      // Redux notification
-      dispatch(
-        createNotification({
-          title: "Inventory Count",
-          message: `Inventory Count ${editId ? "updated" : "created"} successfully`,
-        })
-      );
-
-      resetForm();
-      setEditId(null);
-      setEditValues(null);
-      setOpen(false);
-    } catch (err) {
-      console.error(err);
-      setSnack({ open: true, severity: "error", message: "Failed to save inventory count" });
-    }
-  };
-
-  /* ---------------- EDIT ---------------- */
-  const handleEdit = (row) => {
-    setEditId(row.id);
-    setEditValues(normalizeValues(row));
-    setOpen(true);
-  };
-
-  /* ---------------- DELETE ---------------- */
-  const handleDelete = async (id) => {
-    try {
-      await deleteInventoryCount(id);
-      setData((prev) => prev.filter((d) => d.id !== id));
-      setSnack({ open: true, severity: "success", message: "Inventory Count deleted successfully" });
-    } catch (err) {
-      console.error(err);
-      setSnack({ open: true, severity: "error", message: "Failed to delete inventory count" });
-    }
-  };
+  const cardStats = [
+    {
+      label: "Inventory Count",
+      value: summary.inventoryCount,
+      note: "Items in inventory",
+    },
+    {
+      label: "Total Inventory Quantity",
+      value: formatNumber(summary.totalInventoryQuantity),
+      note: "Total inventory quantity",
+    },
+    {
+      label: "Items Below Threshold",
+      value: summary.itemsBelowThreshold,
+      note: `Threshold <= ${summary.lowStockThreshold}`,
+    },
+    {
+      label: "Items Out of Stock",
+      value: summary.itemsOutOfStock,
+      note: "Quantity <= 0",
+    },
+  ];
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5">Inventory Count</Typography>
-        <Button
-          variant="contained"
-          onClick={() => {
-            setEditId(null);
-            setEditValues(null);
-            setOpen(true);
-          }}
-        >
-          Add Inventory
-        </Button>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
+        Inventory
+      </Typography>
+
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        {cardStats.map((card) => (
+          <Paper key={card.label} sx={{ p: 2.5, borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              {card.label}
+            </Typography>
+            <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
+              {card.value}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {card.note}
+            </Typography>
+          </Paper>
+        ))}
       </Box>
 
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(4, 1fr)" },
-          gap: 2,
-          mb: 3,
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "repeat(2, minmax(180px, 1fr))",
+            xl: "repeat(7, minmax(140px, 1fr))",
+          },
+          gap: 1.5,
+          mb: 1.5,
         }}
       >
-        <Paper sx={{ p: 2, borderRadius: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Total Counts
-          </Typography>
-          <Typography variant="h5" fontWeight={700}>
-            {summaryCounts.total}
-          </Typography>
-        </Paper>
-        <Paper sx={{ p: 2, borderRadius: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Matched
-          </Typography>
-          <Typography variant="h5" fontWeight={700}>
-            {summaryCounts.matched}
-          </Typography>
-        </Paper>
-        <Paper sx={{ p: 2, borderRadius: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Excess
-          </Typography>
-          <Typography variant="h5" fontWeight={700}>
-            {summaryCounts.excess}
-          </Typography>
-        </Paper>
-        <Paper sx={{ p: 2, borderRadius: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Short
-          </Typography>
-          <Typography variant="h5" fontWeight={700}>
-            {summaryCounts.short}
-          </Typography>
-        </Paper>
-      </Box>
-
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
         <TextField
-          placeholder="Search inventory..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ minWidth: 260, flex: 1 }}
+          placeholder="Search by Item Code, Item Name, Customer"
+          value={filters.search}
+          onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+          size="small"
         />
+
         <TextField
           select
-          label="Sort By"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          sx={{ minWidth: 160 }}
+          label="Status"
+          size="small"
+          value={filters.status}
+          onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
         >
-          <MenuItem value="countDate">Count Date</MenuItem>
-          <MenuItem value="itemName">Item Name</MenuItem>
-          <MenuItem value="variance">Variance</MenuItem>
-          <MenuItem value="result">Result</MenuItem>
+          {STATUS_OPTIONS.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
         </TextField>
+
         <TextField
           select
-          label="Sort Order"
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          sx={{ minWidth: 140 }}
+          label="Work Category"
+          size="small"
+          value={filters.workCategory}
+          onChange={(e) => setFilters((prev) => ({ ...prev, workCategory: e.target.value }))}
         >
-          <MenuItem value="desc">Desc</MenuItem>
-          <MenuItem value="asc">Asc</MenuItem>
+          {filterOptions.workCategory.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Store"
+          size="small"
+          value={filters.store}
+          onChange={(e) => setFilters((prev) => ({ ...prev, store: e.target.value }))}
+        >
+          {filterOptions.store.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="City"
+          size="small"
+          value={filters.city}
+          onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value }))}
+        >
+          {filterOptions.city.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Customer"
+          size="small"
+          value={filters.customer}
+          onChange={(e) => setFilters((prev) => ({ ...prev, customer: e.target.value }))}
+        >
+          {filterOptions.customer.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Material Status"
+          size="small"
+          value={filters.materialStatus}
+          onChange={(e) => setFilters((prev) => ({ ...prev, materialStatus: e.target.value }))}
+        >
+          {filterOptions.materialStatus.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
         </TextField>
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {filteredData.length} records found
+        {filteredRows.length} records found
       </Typography>
 
-      {/* TABLE */}
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
+      <TableContainer component={Paper}>
+        <Table size="small" sx={{ minWidth: 2200 }}>
           <TableHead>
             <TableRow>
               <TableCell>#</TableCell>
               <TableCell>Item Code</TableCell>
               <TableCell>Item Name</TableCell>
-              <TableCell>Warehouse</TableCell>
-              <TableCell>System Qty</TableCell>
-              <TableCell>Counted Qty</TableCell>
-              <TableCell>Variance</TableCell>
-              <TableCell>Result</TableCell>
-              <TableCell>Count Date</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Work Order</TableCell>
+              <TableCell>Customer</TableCell>
+              <TableCell>Work Category</TableCell>
+              <TableCell>Material Status</TableCell>
+              <TableCell>Lot Number</TableCell>
+              <TableCell align="right">Quantity</TableCell>
+              <TableCell align="right">Rate</TableCell>
+              <TableCell align="right">Amount</TableCell>
+              <TableCell>Store</TableCell>
+              <TableCell>City</TableCell>
+              <TableCell>Site</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Inventory Age</TableCell>
+              <TableCell>Last Updated</TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {paginatedData.map((row, i) => {
-              const variance = getVariance(row);
-              const result = getVarianceStatus(variance);
-              return (
-                <TableRow key={row.id}>
-                  <TableCell>{(page - 1) * rowsPerPage + i + 1}</TableCell>
-                  <TableCell>{row.itemCode}</TableCell>
-                  <TableCell>{row.itemName}</TableCell>
-                  <TableCell>{row.warehouse}</TableCell>
-                  <TableCell>{row.systemQty}</TableCell>
-                  <TableCell>{row.countedQty}</TableCell>
-                  <TableCell>{variance}</TableCell>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={17} align="center" sx={{ py: 5 }}>
+                  <CircularProgress size={28} />
+                </TableCell>
+              </TableRow>
+            ) : paginatedRows.length > 0 ? (
+              paginatedRows.map((row, index) => (
+                <TableRow key={`${row.itemCode}-${row.workOrderNo}-${row.lotNumber}-${index}`}>
+                  <TableCell>{(page - 1) * ROWS_PER_PAGE + index + 1}</TableCell>
+                  <TableCell>{row.itemCode || "-"}</TableCell>
+                  <TableCell>{row.itemName || "-"}</TableCell>
+                  <TableCell>{row.workOrderNo || "-"}</TableCell>
+                  <TableCell>{row.customer || "-"}</TableCell>
+                  <TableCell>{row.workCategory || "-"}</TableCell>
+                  <TableCell>{row.materialStatus || "-"}</TableCell>
+                  <TableCell>{row.lotNumber || "-"}</TableCell>
+                  <TableCell align="right">{formatNumber(row.quantity)}</TableCell>
+                  <TableCell align="right">{formatNumber(row.rate)}</TableCell>
+                  <TableCell align="right">{formatNumber(row.amount)}</TableCell>
+                  <TableCell>{row.store || "-"}</TableCell>
+                  <TableCell>{row.city || "-"}</TableCell>
+                  <TableCell>{row.site || "-"}</TableCell>
                   <TableCell>
-                    <Chip label={result} color={getResultColor(result)} size="small" />
+                    <Chip
+                      size="small"
+                      label={row.status || "Out of Stock"}
+                      color={getStatusColor(row.status)}
+                    />
                   </TableCell>
-                  <TableCell>{row.countDate}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleEdit(row)}>
-                      <ModeEdit />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(row.id)}>
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
+                  <TableCell>{formatInventoryAge(row.inventoryAgeDays)}</TableCell>
+                  <TableCell>{formatDateTime(row.lastUpdated)}</TableCell>
                 </TableRow>
-              );
-            })}
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={17} align="center" sx={{ py: 4 }}>
+                  No inventory records found
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -375,162 +399,18 @@ export default function InventoryCount() {
         sx={{ mt: 2 }}
         count={pageCount}
         page={page}
-        onChange={(e, v) => setPage(v)}
+        onChange={(_, value) => setPage(value)}
       />
 
-      {/* MODAL */}
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editId ? "Edit" : "Add"} Inventory</DialogTitle>
-
-        <Formik
-          initialValues={editValues || normalizeValues()}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-          enableReinitialize
-        >
-          {({ values, handleChange, errors, touched, setFieldValue }) => (
-            <Form>
-              <DialogContent sx={{ display: "grid", gap: 2 }}>
-                {hasItems ? (
-                  <>
-                    <FormControl
-                      fullWidth
-                      error={Boolean(touched.itemCode && errors.itemCode)}
-                    >
-                      <InputLabel>Item</InputLabel>
-                      <Field
-                        as={Select}
-                        name="itemCode"
-                        value={values.itemCode || ""}
-                        label="Item"
-                        onChange={(e) => {
-                          const code = e.target.value;
-                          handleChange(e);
-                          const selected = items.find(
-                            (item) => item.itemCode === code
-                          );
-                          if (selected) {
-                            setFieldValue("itemName", selected.itemName || "");
-                          }
-                        }}
-                      >
-                        <MenuItem value="" disabled>
-                          Select item
-                        </MenuItem>
-                        {items.map((item) => (
-                          <MenuItem key={item.id} value={item.itemCode}>
-                            {item.itemName} ({item.itemCode})
-                          </MenuItem>
-                        ))}
-                      </Field>
-                      <Typography variant="caption" color="error">
-                        <ErrorMessage name="itemCode" />
-                      </Typography>
-                    </FormControl>
-
-                    <Field
-                      as={TextField}
-                      name="itemName"
-                      label="Item Name"
-                      fullWidth
-                      helperText={<ErrorMessage name="itemName" />}
-                      error={Boolean(touched.itemName && errors.itemName)}
-                      disabled
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Field
-                      as={TextField}
-                      name="itemCode"
-                      label="Item Code"
-                      fullWidth
-                      helperText={<ErrorMessage name="itemCode" />}
-                      error={Boolean(touched.itemCode && errors.itemCode)}
-                    />
-                    <Field
-                      as={TextField}
-                      name="itemName"
-                      label="Item Name"
-                      fullWidth
-                      helperText={<ErrorMessage name="itemName" />}
-                      error={Boolean(touched.itemName && errors.itemName)}
-                    />
-                  </>
-                )}
-
-                <FormControl
-                  fullWidth
-                  error={Boolean(touched.warehouse && errors.warehouse)}
-                >
-                  <InputLabel>Warehouse</InputLabel>
-                  <Field
-                    as={Select}
-                    name="warehouse"
-                    value={values.warehouse || ""}
-                    label="Warehouse"
-                    onChange={handleChange}
-                  >
-                    <MenuItem value="" disabled>
-                      Select warehouse
-                    </MenuItem>
-                    {warehouses.map((w) => (
-                      <MenuItem key={w.id} value={w.warehouseName}>
-                        {w.warehouseName}
-                      </MenuItem>
-                    ))}
-                  </Field>
-                  <Typography variant="caption" color="error">
-                    <ErrorMessage name="warehouse" />
-                  </Typography>
-                </FormControl>
-
-                <Field
-                  as={TextField}
-                  name="systemQty"
-                  type="number"
-                  label="System Qty"
-                  helperText={<ErrorMessage name="systemQty" />}
-                  error={Boolean(touched.systemQty && errors.systemQty)}
-                />
-                <Field
-                  as={TextField}
-                  name="countedQty"
-                  type="number"
-                  label="Counted Qty"
-                  helperText={<ErrorMessage name="countedQty" />}
-                  error={Boolean(touched.countedQty && errors.countedQty)}
-                />
-                <Field
-                  as={TextField}
-                  name="countDate"
-                  type="date"
-                  label="Count Date"
-                  InputLabelProps={{ shrink: true }}
-                  helperText={<ErrorMessage name="countDate" />}
-                  error={Boolean(touched.countDate && errors.countDate)}
-                />
-              </DialogContent>
-
-              <DialogActions>
-                <Button onClick={() => setOpen(false)}>Cancel</Button>
-                <Button type="submit" variant="contained">
-                  Save
-                </Button>
-              </DialogActions>
-            </Form>
-          )}
-        </Formik>
-
-        <Snackbar
-          open={snack.open}
-          autoHideDuration={3000}
-          onClose={() => setSnack({ ...snack, open: false })}
-        >
-          <Alert severity={snack.severity}>{snack.message}</Alert>
-        </Snackbar>
-      </Dialog>
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((prev) => ({ ...prev, open: false }))}
+      >
+        <Alert severity={snack.severity} sx={{ width: "100%" }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
-

@@ -19,6 +19,7 @@ import { getSubsidiaries } from "../../api/Subsidiaries.api";
 import { getCities } from "../../api/Cities.api";
 import { getVendors } from "../../api/vendor.api";
 import { getAllEmployees } from "../../api/Employees.api";
+import { getInventoryCounts } from "../../api/InventoryCount.api";
 
 const VendorissueMaterial = () => {
   const [view, setView] = useState("list");
@@ -29,6 +30,7 @@ const VendorissueMaterial = () => {
 
   const [masterData, setMasterData] = useState({
     items: [],
+    inventoryRows: [],
     stores: [],
     customers: [],
     subsidiaries: [],
@@ -43,9 +45,10 @@ const VendorissueMaterial = () => {
 
   const fetchData = async () => {
     try {
-      const [mainRes, itemsRes, storeRes, customerRes, subsidiaryRes, cityRes, vendorRes, empRes] = await Promise.all([
+      const [mainRes, itemsRes, inventoryRes, storeRes, customerRes, subsidiaryRes, cityRes, vendorRes, empRes] = await Promise.all([
         getVendorIssueMaterials(),
         getItems(),
+        getInventoryCounts(),
         getStores(),
         getCustomers(),
         getSubsidiaries(),
@@ -58,12 +61,13 @@ const VendorissueMaterial = () => {
       setMasterData(prev => ({
         ...prev,
         items: itemsRes.data?.data || [],
+        inventoryRows: inventoryRes.data?.data || [],
         stores: (storeRes.data?.data || []).map(s => s.storeName),
         customers: (customerRes.data?.data || []).map(c => c.customerName || c.name),
         subsidiaries: (subsidiaryRes.data?.data || []).map(s => s.name),
         cities: (cityRes.data?.data || []).map(c => c.cityName || c.name),
         vendors: (vendorRes.data?.data || []).map(v => v.vendorName || v.name),
-        employees: (empRes.data?.data || []).map(e => e.employeeName || e.name),
+        employees: (empRes.data?.data || []).map(e => e.employeeName || e.name || `${e.firstName || ""} ${e.lastName || ""}`.trim()),
       }));
     } catch (e) {
       showSnack("Failed to fetch data", "error");
@@ -116,15 +120,20 @@ const VendorissueMaterial = () => {
 
   const columns = [
     { field: "issueNo", label: "Issue No" },
+    // { field: "workOrderNo", label: "Work Order" },
     { field: "issuedTo", label: "Issued To" },
     { field: "customer", label: "Customer" },
     { field: "date", label: "Date" },
+    { field: "subsidiary", label: "Subsidiary" },
+    { field: "city", label: "City" },
+    { field: "site", label: "Site" },
     { field: "grandTotal", label: "Grand Total" },
   ];
 
   const headerFields = [
     { name: "issueNo", label: "Issue Number", required: true },
-    { name: "issuedTo", label: "Issued To (Vendor/Employee)", required: true, select: true },
+    // { name: "workOrderNo", label: "Work Order No", select: true },
+    { name: "issuedTo", label: "Issued To", required: true, select: true },
     { name: "team", label: "Team" },
     { 
       name: "customer", 
